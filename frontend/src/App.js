@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import '@/App.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from '@/components/LandingPage';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Home from '@/pages/Home';
 import Dashboard from '@/components/Dashboard';
 import ContentManagement from '@/components/ContentManagement';
 import KeywordMonitoring from '@/components/KeywordMonitoring';
@@ -17,7 +17,8 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/verify" element={<VerifyOTP />} />
