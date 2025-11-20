@@ -74,7 +74,32 @@ const VerifyOTP = () => {
           </div>
 
           <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-slate-700">OTP sent to: <span className="font-bold">{activeTab === 'email' ? email : phone}</span></p>
+            <p className="text-sm text-slate-700 mb-2">OTP sent to: <span className="font-bold">{activeTab === 'email' ? email : phone}</span></p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
+              <p className="text-xs text-yellow-800 font-semibold">📝 Development Mode:</p>
+              <p className="text-xs text-yellow-700">To get your OTP, click the button below:</p>
+              <button
+                onClick={async () => {
+                  try {
+                    const identifier = activeTab === 'email' ? email : phone;
+                    const response = await axios.get(`${API}/auth/dev/get-otp/${encodeURIComponent(identifier)}`);
+                    const otpCode = activeTab === 'email' ? response.data.email_otp : response.data.sms_otp;
+                    if (otpCode) {
+                      setOtpCode(otpCode);
+                      toast.success(`OTP copied: ${otpCode}`);
+                    } else {
+                      toast.error('No OTP found. Please resend OTP first.');
+                    }
+                  } catch (error) {
+                    toast.error('Failed to fetch OTP');
+                  }
+                }}
+                className="mt-2 text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                type="button"
+              >
+                Get My OTP Code
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleVerify} className="space-y-6">
