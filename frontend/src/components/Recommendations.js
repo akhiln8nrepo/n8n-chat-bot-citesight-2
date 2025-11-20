@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '@/utils/axios';
 import { Lightbulb, AlertCircle } from 'lucide-react';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
@@ -19,14 +19,14 @@ const Recommendations = () => {
 
   const fetchData = async () => {
     try {
-      const contentRes = await axios.get(`${API}/content`);
+      const contentRes = await axios.get(`/content`);
       setContent(contentRes.data);
       
       if (contentRes.data.length > 0) {
         const allRecommendations = [];
         for (const item of contentRes.data) {
           try {
-            const recRes = await axios.get(`${API}/recommendations/${item.id}`);
+            const recRes = await axios.get(`/recommendations/${item.id}`);
             allRecommendations.push(...recRes.data);
           } catch (error) {
             console.error(`Error fetching recommendations for content ${item.id}:`, error);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '@/utils/axios';
 import { Target, Plus, X } from 'lucide-react';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
@@ -25,14 +25,14 @@ const KeywordMonitoring = () => {
 
   const fetchData = async () => {
     try {
-      const contentRes = await axios.get(`${API}/content`);
+      const contentRes = await axios.get(`/content`);
       setContent(contentRes.data);
       
       if (contentRes.data.length > 0) {
         const allKeywords = [];
         for (const item of contentRes.data) {
           try {
-            const keywordsRes = await axios.get(`${API}/keywords/${item.id}`);
+            const keywordsRes = await axios.get(`/keywords/${item.id}`);
             allKeywords.push(...keywordsRes.data);
           } catch (error) {
             console.error(`Error fetching keywords for content ${item.id}:`, error);
@@ -56,7 +56,7 @@ const KeywordMonitoring = () => {
     }
 
     try {
-      await axios.post(`${API}/keywords`, newKeyword);
+      await axios.post(`/keywords`, newKeyword);
       toast.success('Keyword added and tracking started!');
       setShowAddModal(false);
       setNewKeyword({ content_id: '', keyword: '' });

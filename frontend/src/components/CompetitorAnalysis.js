@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '@/utils/axios';
 import { Users, TrendingUp, Award } from 'lucide-react';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
@@ -19,7 +19,7 @@ const CompetitorAnalysis = () => {
 
   const fetchPublishers = async () => {
     try {
-      const response = await axios.get(`${API}/publishers`);
+      const response = await axios.get(`/publishers`);
       setPublishers(response.data);
       if (response.data.length > 0) {
         setSelectedPublisherId(response.data[0].id);
@@ -35,7 +35,7 @@ const CompetitorAnalysis = () => {
 
   const fetchCompetitors = async (publisherId) => {
     try {
-      const response = await axios.get(`${API}/competitors?publisher_id=${publisherId}`);
+      const response = await axios.get(`/competitors?publisher_id=${publisherId}`);
       setCompetitors(response.data);
     } catch (error) {
       console.error('Error fetching competitors:', error);
