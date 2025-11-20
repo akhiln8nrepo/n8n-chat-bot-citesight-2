@@ -2,6 +2,10 @@ import { useState } from 'react';
 import '@/App.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Home from '@/pages/Home';
+import About from '@/pages/About';
+import Features from '@/pages/Features';
+import Pricing from '@/pages/Pricing';
+import Contact from '@/pages/Contact';
 import Dashboard from '@/components/Dashboard';
 import ContentManagement from '@/components/ContentManagement';
 import KeywordMonitoring from '@/components/KeywordMonitoring';
@@ -19,6 +23,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/verify" element={<VerifyOTP />} />
