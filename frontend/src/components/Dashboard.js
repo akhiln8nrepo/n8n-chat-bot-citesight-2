@@ -15,7 +15,7 @@ const Dashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await axios.get(`${API}/dashboard/stats`);
+      const response = await axios.get('/dashboard/stats');
       setStats(response.data);
       setLoading(false);
     } catch (error) {
