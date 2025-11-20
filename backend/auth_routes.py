@@ -505,3 +505,37 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         "created_at": user.created_at,
         "last_login": user.last_login
     }
+
+@auth_router.get("/dev/get-otp/{identifier}")
+async def get_latest_otp_dev(identifier: str, db: Session = Depends(get_db)):
+    """DEV ONLY: Get latest OTP for testing (remove in production)"""
+    # Find user
+    user = get_user_by_identifier(db, identifier)
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get latest OTPs
+    email_otp = db.query(OTPLog).filter(
+        OTPLog.user_id == user.id,
+        OTPLog.otp_type == 'email',
+        OTPLog.verified == False,
+        OTPLog.expires_at > datetime.now(timezone.utc)
+    ).order_by(OTPLog.created_at.desc()).first()
+    
+    sms_otp = db.query(OTPLog).filter(
+        OTPLog.user_id == user.id,
+        OTPLog.otp_type == 'sms',
+        OTPLog.verified == False,
+        OTPLog.expires_at > datetime.now(timezone.utc)
+    ).order_by(OTPLog.created_at.desc()).first()
+    
+    return {
+        "user_email": user.email,
+        "user_phone": user.phone,
+        "email_otp": email_otp.otp_code if email_otp else None,
+        "email_otp_expires": email_otp.expires_at.isoformat() if email_otp else None,
+        "sms_otp": sms_otp.otp_code if sms_otp else None,
+        "sms_otp_expires": sms_otp.expires_at.isoformat() if sms_otp else None,
+        "note": "This is a development endpoint. Remove in production!"
+    }
