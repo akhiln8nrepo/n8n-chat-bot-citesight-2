@@ -72,7 +72,7 @@ const ContentManagement = () => {
     }
 
     try {
-      await axios.post(`${API}/content`, newContent);
+      await axios.post('/content', newContent);
       toast.success('Content added and visibility tracking started!');
       setShowAddModal(false);
       setNewContent({ publisher_id: '', title: '', url: '', content_text: '' });
@@ -85,7 +85,7 @@ const ContentManagement = () => {
 
   const viewVisibility = async (contentId) => {
     try {
-      const response = await axios.get(`${API}/visibility/${contentId}`);
+      const response = await axios.get(`/visibility/${contentId}`);
       setVisibilityData(response.data);
       const content_item = content.find(c => c.id === contentId);
       setSelectedContent(content_item);
