@@ -334,8 +334,20 @@ async def create_content(input: ContentCreate, request: Request):
     return content
 
 @api_router.get("/content", response_model=List[Content])
-async def get_content():
-    content_list = await db.content.find({}, {"_id": 0}).to_list(1000)
+async def get_content(request: Request):
+    # Get user's publisher IDs
+    auth_header = request.headers.get('authorization')
+    user_id = await get_current_user_from_token(auth_header)
+    
+    if not user_id:
+        return []
+    
+    # Find user's publishers
+    publishers = await db.publishers.find({"user_id": str(user_id)}, {"_id": 0}).to_list(100)
+    publisher_ids = [p['id'] for p in publishers]
+    
+    # Get content for these publishers
+    content_list = await db.content.find({"publisher_id": {"$in": publisher_ids}}, {"_id": 0}).to_list(1000)
     for c in content_list:
         if isinstance(c['created_at'], str):
             c['created_at'] = datetime.fromisoformat(c['created_at'])
