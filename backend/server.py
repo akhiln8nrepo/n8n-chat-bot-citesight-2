@@ -283,26 +283,18 @@ async def get_my_publisher(request: Request):
             existing['created_at'] = datetime.fromisoformat(existing['created_at'])
         return Publisher(**existing)
     
-    # Create default publisher for user
-    from auth_db import SessionLocal, User
-    db_session = SessionLocal()
-    try:
-        auth_user = db_session.query(User).filter(User.id == user_id).first()
-        if auth_user:
-            publisher = Publisher(
-                name=f"{auth_user.first_name} {auth_user.last_name}",
-                email=auth_user.email,
-                website=auth_user.business_name or "https://example.com",
-                user_id=str(user_id)
-            )
-            doc = publisher.model_dump()
-            doc['created_at'] = doc['created_at'].isoformat()
-            await db.publishers.insert_one(doc)
-            return publisher
-    finally:
-        db_session.close()
-    
-    raise HTTPException(status_code=404, detail="User not found")
+    # Create default publisher for user (using user_id as identifier)
+    # In production, you would fetch user details from auth system
+    publisher = Publisher(
+        name=f"User {user_id}",
+        email=f"user{user_id}@citesight.com",
+        website="https://citesight.com",
+        user_id=str(user_id)
+    )
+    doc = publisher.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.publishers.insert_one(doc)
+    return publisher
 
 # Content routes
 @api_router.post("/content", response_model=Content)
