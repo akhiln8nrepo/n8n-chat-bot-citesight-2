@@ -98,7 +98,7 @@ def log_auth_action(db: Session, user_id: Optional[int], action: str,
     db.commit()
 
 def get_user_by_identifier(db: Session, identifier: str):
-    \"\"\"Get user by email or phone\"\"\"
+    """Get user by email or phone"""
     if validate_email(identifier):
         return db.query(User).filter(User.email == identifier).first()
     elif validate_phone(identifier):
