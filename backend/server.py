@@ -390,9 +390,33 @@ async def get_recommendations(content_id: str):
 
 # Dashboard stats
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(publisher_id: Optional[str] = None):
-    # Get all content for publisher
-    query = {"publisher_id": publisher_id} if publisher_id else {}
+async def get_dashboard_stats(request: Request):
+    # Get user's publisher
+    auth_header = request.headers.get('authorization')
+    user_id = await get_current_user_from_token(auth_header)
+    
+    if not user_id:
+        return {
+            "total_content": 0,
+            "avg_visibility_score": 0,
+            "platforms_present": {},
+            "total_keywords": 0,
+            "visibility_trend": []
+        }
+    
+    # Find user's publisher
+    publisher = await db.publishers.find_one({"user_id": str(user_id)})
+    if not publisher:
+        return {
+            "total_content": 0,
+            "avg_visibility_score": 0,
+            "platforms_present": {},
+            "total_keywords": 0,
+            "visibility_trend": []
+        }
+    
+    # Get all content for this publisher
+    query = {"publisher_id": publisher['id']}
     content_list = await db.content.find(query, {"_id": 0}).to_list(1000)
     
     if not content_list:
