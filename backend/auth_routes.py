@@ -85,7 +85,7 @@ class ResetPasswordRequest(BaseModel):
 def log_auth_action(db: Session, user_id: Optional[int], action: str, 
                     ip_address: str, user_agent: str, status: str, 
                     error_message: Optional[str] = None):
-    \"\"\"Log authentication actions\"\"\"
+    """Log authentication actions"""
     log = AuthLog(
         user_id=user_id,
         action=action,
