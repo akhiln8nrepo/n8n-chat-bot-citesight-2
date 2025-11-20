@@ -48,13 +48,22 @@ const LandingPage = () => {
             </div>
             <span className="text-2xl font-bold text-slate-900">CiteSight</span>
           </div>
-          <button
-            data-testid="get-started-nav-btn"
-            onClick={() => navigate('/dashboard')}
-            className="btn-primary"
-          >
-            Get Started
-          </button>
+          <div className="flex gap-3">
+            <button
+              data-testid="login-nav-btn"
+              onClick={() => navigate('/auth/login')}
+              className="btn-secondary"
+            >
+              Login
+            </button>
+            <button
+              data-testid="get-started-nav-btn"
+              onClick={() => navigate('/auth/register')}
+              className="btn-primary"
+            >
+              Get Started
+            </button>
+          </div>
         </div>
       </nav>
 
