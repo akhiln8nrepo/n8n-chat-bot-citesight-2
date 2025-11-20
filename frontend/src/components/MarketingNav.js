@@ -1,19 +1,35 @@
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { TrendingUp, Menu, X, User, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 const MarketingNav = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
 
   const navItems = [
     { label: 'Home', path: '/home' },
     { label: 'Features', path: '/features' },
     { label: 'Pricing', path: '/pricing' },
     { label: 'About', path: '/about' },
-    { label: 'Blog', path: '/blog' },
     { label: 'Contact', path: '/contact' },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    setUser(null);
+    toast.success('Logged out successfully');
+    navigate('/home');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -41,18 +57,39 @@ const MarketingNav = () => {
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-4">
-            <button
-              onClick={() => navigate('/auth/login')}
-              className="text-slate-700 hover:text-blue-600 font-semibold transition-colors"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => navigate('/auth/register')}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all"
-            >
-              Get Started
-            </button>
+            {user ? (
+              <>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center gap-2 text-slate-700 hover:text-blue-600 font-semibold transition-colors"
+                >
+                  <User size={18} />
+                  {user.first_name}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-slate-700 hover:text-red-600 font-semibold transition-colors"
+                >
+                  <LogOut size={18} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate('/auth/login')}
+                  className="text-slate-700 hover:text-blue-600 font-semibold transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => navigate('/auth/register')}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all"
+                >
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
