@@ -208,6 +208,23 @@ async def generate_geo_recommendations(content_text: str, content_id: str) -> Li
             }
         ]
 
+# ==================== AUTH MIDDLEWARE ====================
+
+async def get_current_user_from_token(authorization: str = None):
+    """Extract and verify user from JWT token"""
+    if not authorization or not authorization.startswith('Bearer '):
+        return None
+    
+    token = authorization.split(' ')[1]
+    try:
+        from auth_utils import verify_token
+        payload = verify_token(token)
+        if payload:
+            return payload.get('user_id')
+    except:
+        pass
+    return None
+
 # ==================== ROUTES ====================
 
 @api_router.get("/")
