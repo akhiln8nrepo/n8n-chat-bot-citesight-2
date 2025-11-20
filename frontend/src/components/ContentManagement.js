@@ -54,7 +54,7 @@ const ContentManagement = () => {
     }
 
     try {
-      await axios.post(`${API}/publishers`, newPublisher);
+      await axios.post('/publishers', newPublisher);
       toast.success('Publisher added successfully!');
       setShowPublisherModal(false);
       setNewPublisher({ name: '', email: '', website: '' });
