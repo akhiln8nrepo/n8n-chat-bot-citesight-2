@@ -113,18 +113,39 @@ const MarketingNav = () => {
                 {item.label}
               </button>
             ))}
-            <button
-              onClick={() => { navigate('/auth/login'); setMobileMenuOpen(false); }}
-              className="block w-full text-left text-slate-700 font-semibold py-2"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => { navigate('/auth/register'); setMobileMenuOpen(false); }}
-              className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold text-center"
-            >
-              Get Started
-            </button>
+            {user ? (
+              <>
+                <button
+                  onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
+                  className="block w-full text-left text-slate-700 font-semibold py-2 flex items-center gap-2"
+                >
+                  <User size={18} />
+                  Dashboard ({user.first_name})
+                </button>
+                <button
+                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                  className="block w-full bg-red-600 text-white px-6 py-2.5 rounded-lg font-semibold text-center flex items-center justify-center gap-2"
+                >
+                  <LogOut size={18} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => { navigate('/auth/login'); setMobileMenuOpen(false); }}
+                  className="block w-full text-left text-slate-700 font-semibold py-2"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => { navigate('/auth/register'); setMobileMenuOpen(false); }}
+                  className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold text-center"
+                >
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
