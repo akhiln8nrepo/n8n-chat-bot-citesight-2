@@ -171,7 +171,7 @@ const LandingPage = () => {
           </p>
           <button
             data-testid="cta-get-started-btn"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/auth/register')}
             className="bg-white text-sky-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-slate-50 transition-colors shadow-lg"
           >
             Get Started Now
