@@ -134,10 +134,10 @@ def create_and_send_otp(db: Session, user: User, otp_type: str):
 
 # ==================== ROUTES ====================
 
-@auth_router.post(\"/register\")
-@limiter.limit(\"5/minute\")
+@auth_router.post("/register")
+@limiter.limit("5/minute")
 async def register(request: Request, data: RegisterRequest, db: Session = Depends(get_db)):
-    \"\"\"Register new user\"\"\"
+    """Register new user"""
     try:
         # Check if email exists
         existing_email = db.query(User).filter(User.email == data.email).first()
@@ -146,7 +146,7 @@ async def register(request: Request, data: RegisterRequest, db: Session = Depend
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'Email already registered')
-            raise HTTPException(status_code=400, detail=\"Email already registered\")
+            raise HTTPException(status_code=400, detail="Email already registered")
         
         # Check if phone exists
         clean_phone = data.phone.replace(' ', '').replace('-', '')
@@ -156,7 +156,7 @@ async def register(request: Request, data: RegisterRequest, db: Session = Depend
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'Phone already registered')
-            raise HTTPException(status_code=400, detail=\"Phone number already registered\")
+            raise HTTPException(status_code=400, detail="Phone number already registered")
         
         # Create user
         hashed_password = hash_password(data.password)
@@ -187,12 +187,12 @@ async def register(request: Request, data: RegisterRequest, db: Session = Depend
         sms_otp = create_and_send_otp(db, new_user, 'sms')
         
         return {
-            \"message\": \"Registration successful. Please verify your email or phone.\",
-            \"user_id\": new_user.id,
-            \"email\": new_user.email,
-            \"phone\": new_user.phone,
-            \"email_verified\": False,
-            \"phone_verified\": False
+            "message": "Registration successful. Please verify your email or phone.",
+            "user_id": new_user.id,
+            "email": new_user.email,
+            "phone": new_user.phone,
+            "email_verified": False,
+            "phone_verified": False
         }
         
     except HTTPException:
@@ -202,12 +202,12 @@ async def register(request: Request, data: RegisterRequest, db: Session = Depend
                        get_remote_address(request), 
                        request.headers.get('user-agent', ''),
                        'failed', str(e))
-        raise HTTPException(status_code=500, detail=\"Registration failed\")
+        raise HTTPException(status_code=500, detail="Registration failed")
 
-@auth_router.post(\"/login\")
-@limiter.limit(\"10/minute\")
+@auth_router.post("/login")
+@limiter.limit("10/minute")
 async def login(request: Request, data: LoginRequest, db: Session = Depends(get_db)):
-    \"\"\"User login with email or phone\"\"\"
+    """User login with email or phone"""
     try:
         # Find user
         user = get_user_by_identifier(db, data.identifier)
@@ -217,7 +217,7 @@ async def login(request: Request, data: LoginRequest, db: Session = Depends(get_
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'User not found')
-            raise HTTPException(status_code=401, detail=\"Invalid credentials\")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
         
         # Verify password
         if not verify_password(data.password, user.password_hash):
@@ -225,7 +225,7 @@ async def login(request: Request, data: LoginRequest, db: Session = Depends(get_
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'Invalid password')
-            raise HTTPException(status_code=401, detail=\"Invalid credentials\")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
         
         # Check verification status
         if not user.email_verified and not user.phone_verified:
@@ -235,7 +235,7 @@ async def login(request: Request, data: LoginRequest, db: Session = Depends(get_
                           'failed', 'Account not verified')
             raise HTTPException(
                 status_code=403, 
-                detail=\"Please verify your email or phone number before logging in\"
+                detail="Please verify your email or phone number before logging in"
             )
         
         # Update last login
@@ -243,7 +243,7 @@ async def login(request: Request, data: LoginRequest, db: Session = Depends(get_
         db.commit()
         
         # Create access token
-        access_token = create_access_token(data={\"user_id\": user.id, \"email\": user.email})
+        access_token = create_access_token(data={"user_id": user.id, "email": user.email})
         
         # Log success
         log_auth_action(db, user.id, 'login', 
@@ -252,41 +252,41 @@ async def login(request: Request, data: LoginRequest, db: Session = Depends(get_
                        'success')
         
         return {
-            \"message\": \"Login successful\",
-            \"access_token\": access_token,
-            \"token_type\": \"bearer\",
-            \"user\": {
-                \"id\": user.id,
-                \"first_name\": user.first_name,
-                \"last_name\": user.last_name,
-                \"email\": user.email,
-                \"phone\": user.phone,
-                \"email_verified\": user.email_verified,
-                \"phone_verified\": user.phone_verified
+            "message": "Login successful",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "phone": user.phone,
+                "email_verified": user.email_verified,
+                "phone_verified": user.phone_verified
             }
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=\"Login failed\")
+        raise HTTPException(status_code=500, detail="Login failed")
 
-@auth_router.post(\"/send-otp\")
-@limiter.limit(\"5/minute\")
+@auth_router.post("/send-otp")
+@limiter.limit("5/minute")
 async def send_otp(request: Request, data: SendOTPRequest, db: Session = Depends(get_db)):
-    \"\"\"Send OTP via email or SMS\"\"\"
+    """Send OTP via email or SMS"""
     try:
         # Find user
         user = get_user_by_identifier(db, data.identifier)
         
         if not user:
-            raise HTTPException(status_code=404, detail=\"User not found\")
+            raise HTTPException(status_code=404, detail="User not found")
         
         # Check if already verified
         if data.otp_type == 'email' and user.email_verified:
-            return {\"message\": \"Email already verified\"}
+            return {"message": "Email already verified"}
         if data.otp_type == 'sms' and user.phone_verified:
-            return {\"message\": \"Phone already verified\"}
+            return {"message": "Phone already verified"}
         
         # Create and send OTP
         otp_log = create_and_send_otp(db, user, data.otp_type)
@@ -298,25 +298,25 @@ async def send_otp(request: Request, data: SendOTPRequest, db: Session = Depends
                        'success')
         
         return {
-            \"message\": f\"OTP sent to your {data.otp_type}\",
-            \"expires_in\": \"10 minutes\"
+            "message": f"OTP sent to your {data.otp_type}",
+            "expires_in": "10 minutes"
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=\"Failed to send OTP\")
+        raise HTTPException(status_code=500, detail="Failed to send OTP")
 
-@auth_router.post(\"/verify-otp\")
-@limiter.limit(\"5/minute\")
+@auth_router.post("/verify-otp")
+@limiter.limit("5/minute")
 async def verify_otp(request: Request, data: VerifyOTPRequest, db: Session = Depends(get_db)):
-    \"\"\"Verify OTP code\"\"\"
+    """Verify OTP code"""
     try:
         # Find user
         user = get_user_by_identifier(db, data.identifier)
         
         if not user:
-            raise HTTPException(status_code=404, detail=\"User not found\")
+            raise HTTPException(status_code=404, detail="User not found")
         
         # Find latest OTP
         otp_log = db.query(OTPLog).filter(
@@ -330,7 +330,7 @@ async def verify_otp(request: Request, data: VerifyOTPRequest, db: Session = Dep
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'No OTP found')
-            raise HTTPException(status_code=404, detail=\"No OTP found. Please request a new one.\")
+            raise HTTPException(status_code=404, detail="No OTP found. Please request a new one.")
         
         # Check expiry
         if datetime.now(timezone.utc) > otp_log.expires_at:
@@ -338,7 +338,7 @@ async def verify_otp(request: Request, data: VerifyOTPRequest, db: Session = Dep
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'OTP expired')
-            raise HTTPException(status_code=400, detail=\"OTP has expired\")
+            raise HTTPException(status_code=400, detail="OTP has expired")
         
         # Check attempts (max 5)
         if otp_log.attempts >= 5:
@@ -346,7 +346,7 @@ async def verify_otp(request: Request, data: VerifyOTPRequest, db: Session = Dep
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'Too many attempts')
-            raise HTTPException(status_code=400, detail=\"Too many failed attempts. Please request a new OTP.\")
+            raise HTTPException(status_code=400, detail="Too many failed attempts. Please request a new OTP.")
         
         # Increment attempts
         otp_log.attempts += 1
@@ -358,7 +358,7 @@ async def verify_otp(request: Request, data: VerifyOTPRequest, db: Session = Dep
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'Invalid OTP')
-            raise HTTPException(status_code=400, detail=\"Invalid OTP code\")
+            raise HTTPException(status_code=400, detail="Invalid OTP code")
         
         # Mark as verified
         otp_log.verified = True
@@ -377,33 +377,33 @@ async def verify_otp(request: Request, data: VerifyOTPRequest, db: Session = Dep
                        'success')
         
         return {
-            \"message\": f\"{data.otp_type.capitalize()} verified successfully\",
-            \"email_verified\": user.email_verified,
-            \"phone_verified\": user.phone_verified
+            "message": f"{data.otp_type.capitalize()} verified successfully",
+            "email_verified": user.email_verified,
+            "phone_verified": user.phone_verified
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=\"Verification failed\")
+        raise HTTPException(status_code=500, detail="Verification failed")
 
-@auth_router.post(\"/resend-otp\")
-@limiter.limit(\"3/minute\")
+@auth_router.post("/resend-otp")
+@limiter.limit("3/minute")
 async def resend_otp(request: Request, data: SendOTPRequest, db: Session = Depends(get_db)):
-    \"\"\"Resend OTP\"\"\"
+    """Resend OTP"""
     return await send_otp(request, data, db)
 
-@auth_router.post(\"/forgot-password\")
-@limiter.limit(\"3/minute\")
+@auth_router.post("/forgot-password")
+@limiter.limit("3/minute")
 async def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    \"\"\"Initiate password reset\"\"\"
+    """Initiate password reset"""
     try:
         # Find user
         user = get_user_by_identifier(db, data.identifier)
         
         if not user:
             # Don't reveal if user exists
-            return {\"message\": \"If the account exists, a password reset code has been sent\"}
+            return {"message": "If the account exists, a password reset code has been sent"}
         
         # Send OTP to both email and SMS
         create_and_send_otp(db, user, 'email')
@@ -416,23 +416,23 @@ async def forgot_password(request: Request, data: ForgotPasswordRequest, db: Ses
                        'success')
         
         return {
-            \"message\": \"Password reset codes sent to your email and phone\",
-            \"expires_in\": \"10 minutes\"
+            "message": "Password reset codes sent to your email and phone",
+            "expires_in": "10 minutes"
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=\"Failed to process request\")
+        raise HTTPException(status_code=500, detail="Failed to process request")
 
-@auth_router.post(\"/reset-password\")
-@limiter.limit(\"5/minute\")
+@auth_router.post("/reset-password")
+@limiter.limit("5/minute")
 async def reset_password(request: Request, data: ResetPasswordRequest, db: Session = Depends(get_db)):
-    \"\"\"Reset password with OTP\"\"\"
+    """Reset password with OTP"""
     try:
         # Find user
         user = get_user_by_identifier(db, data.identifier)
         
         if not user:
-            raise HTTPException(status_code=404, detail=\"User not found\")
+            raise HTTPException(status_code=404, detail="User not found")
         
         # Verify OTP (check both email and SMS)
         otp_valid = False
@@ -455,7 +455,7 @@ async def reset_password(request: Request, data: ResetPasswordRequest, db: Sessi
                           get_remote_address(request), 
                           request.headers.get('user-agent', ''),
                           'failed', 'Invalid or expired OTP')
-            raise HTTPException(status_code=400, detail=\"Invalid or expired OTP\")
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
         
         # Update password
         user.password_hash = hash_password(data.new_password)
@@ -468,40 +468,40 @@ async def reset_password(request: Request, data: ResetPasswordRequest, db: Sessi
                        request.headers.get('user-agent', ''),
                        'success')
         
-        return {\"message\": \"Password reset successful. Please login with your new password.\"}
+        return {"message": "Password reset successful. Please login with your new password."}
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=\"Password reset failed\")
+        raise HTTPException(status_code=500, detail="Password reset failed")
 
-@auth_router.get(\"/me\")
+@auth_router.get("/me")
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), 
                           db: Session = Depends(get_db)):
-    \"\"\"Get current authenticated user\"\"\"
+    """Get current authenticated user"""
     token = credentials.credentials
     payload = verify_token(token)
     
     if not payload:
-        raise HTTPException(status_code=401, detail=\"Invalid or expired token\")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
     
-    user_id = payload.get(\"user_id\")
+    user_id = payload.get("user_id")
     user = db.query(User).filter(User.id == user_id).first()
     
     if not user:
-        raise HTTPException(status_code=404, detail=\"User not found\")
+        raise HTTPException(status_code=404, detail="User not found")
     
     return {
-        \"id\": user.id,
-        \"first_name\": user.first_name,
-        \"last_name\": user.last_name,
-        \"email\": user.email,
-        \"phone\": user.phone,
-        \"business_name\": user.business_name,
-        \"business_type\": user.business_type,
-        \"gst_tax_id\": user.gst_tax_id,
-        \"email_verified\": user.email_verified,
-        \"phone_verified\": user.phone_verified,
-        \"created_at\": user.created_at,
-        \"last_login\": user.last_login
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "phone": user.phone,
+        "business_name": user.business_name,
+        "business_type": user.business_type,
+        "gst_tax_id": user.gst_tax_id,
+        "email_verified": user.email_verified,
+        "phone_verified": user.phone_verified,
+        "created_at": user.created_at,
+        "last_login": user.last_login
     }
