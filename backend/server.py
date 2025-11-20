@@ -233,20 +233,75 @@ async def root():
 
 # Publisher routes
 @api_router.post("/publishers", response_model=Publisher)
-async def create_publisher(input: PublisherCreate):
-    publisher = Publisher(**input.model_dump())
+async def create_publisher(input: PublisherCreate, request: Request):
+    # Get user_id from auth token
+    auth_header = request.headers.get('authorization')
+    user_id = await get_current_user_from_token(auth_header)
+    
+    # Check if publisher already exists for this user
+    if user_id:
+        existing = await db.publishers.find_one({"user_id": str(user_id)})
+        if existing:
+            existing['created_at'] = datetime.fromisoformat(existing['created_at']) if isinstance(existing['created_at'], str) else existing['created_at']
+            return Publisher(**existing)
+    
+    publisher_data = input.model_dump()
+    publisher_data['user_id'] = str(user_id) if user_id else None
+    publisher = Publisher(**publisher_data)
     doc = publisher.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     await db.publishers.insert_one(doc)
     return publisher
 
 @api_router.get("/publishers", response_model=List[Publisher])
-async def get_publishers():
-    publishers = await db.publishers.find({}, {"_id": 0}).to_list(1000)
+async def get_publishers(request: Request):
+    auth_header = request.headers.get('authorization')
+    user_id = await get_current_user_from_token(auth_header)
+    
+    # Only return publishers for the logged-in user
+    query = {"user_id": str(user_id)} if user_id else {}
+    publishers = await db.publishers.find(query, {"_id": 0}).to_list(1000)
     for p in publishers:
         if isinstance(p['created_at'], str):
             p['created_at'] = datetime.fromisoformat(p['created_at'])
     return publishers
+
+@api_router.get("/publishers/me", response_model=Publisher)
+async def get_my_publisher(request: Request):
+    """Get or create publisher for logged-in user"""
+    auth_header = request.headers.get('authorization')
+    user_id = await get_current_user_from_token(auth_header)
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Find existing publisher
+    existing = await db.publishers.find_one({"user_id": str(user_id)})
+    if existing:
+        if isinstance(existing['created_at'], str):
+            existing['created_at'] = datetime.fromisoformat(existing['created_at'])
+        return Publisher(**existing)
+    
+    # Create default publisher for user
+    from auth_db import SessionLocal, User
+    db_session = SessionLocal()
+    try:
+        auth_user = db_session.query(User).filter(User.id == user_id).first()
+        if auth_user:
+            publisher = Publisher(
+                name=f"{auth_user.first_name} {auth_user.last_name}",
+                email=auth_user.email,
+                website=auth_user.business_name or "https://example.com",
+                user_id=str(user_id)
+            )
+            doc = publisher.model_dump()
+            doc['created_at'] = doc['created_at'].isoformat()
+            await db.publishers.insert_one(doc)
+            return publisher
+    finally:
+        db_session.close()
+    
+    raise HTTPException(status_code=404, detail="User not found")
 
 # Content routes
 @api_router.post("/content", response_model=Content)
