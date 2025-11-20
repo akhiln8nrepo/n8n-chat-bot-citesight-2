@@ -6,6 +6,7 @@ import About from '@/pages/About';
 import Features from '@/pages/Features';
 import Pricing from '@/pages/Pricing';
 import Contact from '@/pages/Contact';
+import Logout from '@/pages/Logout';
 import Dashboard from '@/components/Dashboard';
 import ContentManagement from '@/components/ContentManagement';
 import KeywordMonitoring from '@/components/KeywordMonitoring';
@@ -31,6 +32,7 @@ function App() {
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/verify" element={<VerifyOTP />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/logout" element={<Logout />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/content" element={<ContentManagement />} />
           <Route path="/keywords" element={<KeywordMonitoring />} />
