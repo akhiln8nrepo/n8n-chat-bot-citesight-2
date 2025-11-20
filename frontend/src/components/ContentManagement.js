@@ -32,12 +32,13 @@ const ContentManagement = () => {
 
   const fetchData = async () => {
     try {
-      const [contentRes, publishersRes] = await Promise.all([
-        axios.get(`${API}/content`),
-        axios.get(`${API}/publishers`)
-      ]);
+      // Get or create publisher for logged-in user
+      const publisherRes = await axios.get('/publishers/me');
+      setPublishers([publisherRes.data]);
+      
+      // Get content
+      const contentRes = await axios.get('/content');
       setContent(contentRes.data);
-      setPublishers(publishersRes.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
