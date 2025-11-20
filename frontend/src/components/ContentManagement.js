@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '@/utils/axios';
 import { FileText, Plus, Eye, TrendingUp, X } from 'lucide-react';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const ContentManagement = () => {
   const [content, setContent] = useState([]);
