@@ -81,7 +81,7 @@ const LandingPage = () => {
             <div className="flex flex-wrap gap-4">
               <button
                 data-testid="start-monitoring-btn"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/auth/register')}
                 className="btn-primary"
               >
                 Start Monitoring
