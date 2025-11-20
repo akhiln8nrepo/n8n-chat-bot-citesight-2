@@ -306,7 +306,16 @@ async def get_my_publisher(request: Request):
 
 # Content routes
 @api_router.post("/content", response_model=Content)
-async def create_content(input: ContentCreate):
+async def create_content(input: ContentCreate, request: Request):
+    # Verify user owns the publisher
+    auth_header = request.headers.get('authorization')
+    user_id = await get_current_user_from_token(auth_header)
+    
+    if user_id:
+        publisher = await db.publishers.find_one({"id": input.publisher_id, "user_id": str(user_id)})
+        if not publisher:
+            raise HTTPException(status_code=403, detail="Not authorized to add content for this publisher")
+    
     content = Content(**input.model_dump())
     doc = content.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
