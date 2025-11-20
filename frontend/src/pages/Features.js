@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Target, Lightbulb, BarChart3, Bell, DollarSign, Radio, Award, Zap, CheckCircle } from 'lucide-react';
+import { TrendingUp, Target, Lightbulb, BarChart3, Bell, DollarSign, Radio, Award, Zap, CheckCircle, Users } from 'lucide-react';
 import MarketingNav from '@/components/MarketingNav';
 import MarketingFooter from '@/components/MarketingFooter';
 import { Helmet } from 'react-helmet';
