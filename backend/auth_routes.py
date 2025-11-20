@@ -107,7 +107,7 @@ def get_user_by_identifier(db: Session, identifier: str):
     return None
 
 def create_and_send_otp(db: Session, user: User, otp_type: str):
-    \"\"\"Create OTP and send via email or SMS\"\"\"
+    """Create OTP and send via email or SMS"""
     # Generate OTP
     otp_code = generate_otp()
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
