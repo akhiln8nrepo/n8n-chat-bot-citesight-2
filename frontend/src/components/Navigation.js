@@ -21,7 +21,7 @@ const Navigation = () => {
             <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-lg flex items-center justify-center">
               <TrendingUp size={24} className="text-white" />
             </div>
-            <span className="text-xl font-bold text-slate-900">GEO Monitor</span>
+            <span className="text-xl font-bold text-slate-900">CiteSight</span>
           </div>
 
           <div className="flex gap-2">

@@ -150,7 +150,7 @@ async def generate_geo_recommendations(content_text: str, content_id: str) -> Li
         
         chat = LlmChat(
             api_key=api_key,
-            session_id=f"geo_rec_{content_id}",
+            session_id=f"citesight_rec_{content_id}",
             system_message="You are an AI-powered GEO (Generative Engine Optimization) expert. Provide 5 actionable recommendations to improve content visibility in AI-generated summaries. Focus on semantic structure, schema markup, FAQ injection, and content optimization."
         ).with_model("openai", "gpt-4o-mini")
         
