@@ -264,6 +264,285 @@ async def get_current_user_from_token(authorization: str = None):
 async def root():
     return {"message": "AI Content Monitor API"}
 
+# ==================== AUTH ROUTES ====================
+
+class RegisterRequest(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    password: str
+    business_name: Optional[str] = None
+    business_type: Optional[str] = None
+    gst_tax_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    identifier: str
+    password: str
+
+class VerifyOTPRequest(BaseModel):
+    identifier: str
+    otp_code: str
+    otp_type: str
+
+@api_router.post("/auth/register")
+async def register_user(data: RegisterRequest):
+    """Register new user"""
+    try:
+        # Check if email exists
+        existing = await auth_db.users.find_one({"email": data.email})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Check if phone exists
+        existing_phone = await auth_db.users.find_one({"phone": data.phone})
+        if existing_phone:
+            raise HTTPException(status_code=400, detail="Phone already registered")
+        
+        # Create user
+        user_id = str(uuid.uuid4())
+        user_doc = {
+            "id": user_id,
+            "first_name": data.first_name,
+            "last_name": data.last_name,
+            "email": data.email,
+            "phone": data.phone,
+            "password_hash": hash_password(data.password),
+            "business_name": data.business_name,
+            "business_type": data.business_type,
+            "gst_tax_id": data.gst_tax_id,
+            "notes": data.notes,
+            "email_verified": False,
+            "phone_verified": False,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "last_login": None
+        }
+        
+        await auth_db.users.insert_one(user_doc)
+        
+        # Generate OTPs
+        email_otp = generate_otp()
+        sms_otp = generate_otp()
+        
+        # Store OTPs
+        await auth_db.otp_logs.insert_many([
+            {
+                "user_id": user_id,
+                "otp_code": email_otp,
+                "otp_type": "email",
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+                "verified": False,
+                "attempts": 0,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "user_id": user_id,
+                "otp_code": sms_otp,
+                "otp_type": "sms",
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+                "verified": False,
+                "attempts": 0,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+        ])
+        
+        # Mock send OTP
+        logger.info(f"📧 EMAIL OTP: {email_otp} for {data.email}")
+        logger.info(f"📱 SMS OTP: {sms_otp} for {data.phone}")
+        
+        return {
+            "message": "Registration successful. Please verify your email or phone.",
+            "user_id": user_id,
+            "email": data.email,
+            "phone": data.phone,
+            "email_verified": False,
+            "phone_verified": False
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        raise HTTPException(status_code=500, detail="Registration failed")
+
+@api_router.post("/auth/login")
+async def login_user(data: LoginRequest):
+    """User login"""
+    try:
+        # Find user by email or phone
+        user = await auth_db.users.find_one({
+            "$or": [{"email": data.identifier}, {"phone": data.identifier}]
+        })
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        # Verify password
+        if not verify_password(data.password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        # Check verification
+        if not user.get("email_verified") and not user.get("phone_verified"):
+            raise HTTPException(status_code=403, detail="Please verify your email or phone")
+        
+        # Update last login
+        await auth_db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Create token
+        token = create_access_token({"user_id": user["id"], "email": user["email"]})
+        
+        return {
+            "message": "Login successful",
+            "access_token": token,
+            "token_type": "bearer",
+            "user": {
+                "id": user["id"],
+                "first_name": user["first_name"],
+                "last_name": user["last_name"],
+                "email": user["email"],
+                "phone": user["phone"],
+                "email_verified": user.get("email_verified", False),
+                "phone_verified": user.get("phone_verified", False)
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(data: VerifyOTPRequest):
+    """Verify OTP"""
+    try:
+        # Find user
+        user = await auth_db.users.find_one({
+            "$or": [{"email": data.identifier}, {"phone": data.identifier}]
+        })
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Find OTP
+        otp_log = await auth_db.otp_logs.find_one({
+            "user_id": user["id"],
+            "otp_type": data.otp_type,
+            "verified": False,
+            "otp_code": data.otp_code
+        })
+        
+        if not otp_log:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+        # Check expiry
+        expires_at = datetime.fromisoformat(otp_log["expires_at"])
+        if datetime.now(timezone.utc) > expires_at:
+            raise HTTPException(status_code=400, detail="OTP expired")
+        
+        # Mark as verified
+        await auth_db.otp_logs.update_one(
+            {"_id": otp_log["_id"]},
+            {"$set": {"verified": True}}
+        )
+        
+        # Update user verification
+        update_field = "email_verified" if data.otp_type == "email" else "phone_verified"
+        await auth_db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {update_field: True}}
+        )
+        
+        user = await auth_db.users.find_one({"id": user["id"]})
+        
+        return {
+            "message": f"{data.otp_type.capitalize()} verified successfully",
+            "email_verified": user.get("email_verified", False),
+            "phone_verified": user.get("phone_verified", False)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"OTP verification error: {e}")
+        raise HTTPException(status_code=500, detail="Verification failed")
+
+@api_router.post("/auth/send-otp")
+async def send_otp(data: dict):
+    """Send OTP"""
+    try:
+        identifier = data.get("identifier")
+        otp_type = data.get("otp_type")
+        
+        user = await auth_db.users.find_one({
+            "$or": [{"email": identifier}, {"phone": identifier}]
+        })
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Generate new OTP
+        otp_code = generate_otp()
+        
+        await auth_db.otp_logs.insert_one({
+            "user_id": user["id"],
+            "otp_code": otp_code,
+            "otp_type": otp_type,
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+            "verified": False,
+            "attempts": 0,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        logger.info(f"🔐 {otp_type.upper()} OTP: {otp_code} for {identifier}")
+        
+        return {"message": f"OTP sent to your {otp_type}", "expires_in": "10 minutes"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Send OTP error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send OTP")
+
+@api_router.post("/auth/resend-otp")
+async def resend_otp(data: dict):
+    """Resend OTP"""
+    return await send_otp(data)
+
+@api_router.get("/auth/dev/get-otp/{identifier}")
+async def get_otp_dev(identifier: str):
+    """DEV: Get latest OTP"""
+    try:
+        user = await auth_db.users.find_one({
+            "$or": [{"email": identifier}, {"phone": identifier}]
+        })
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        email_otp = await auth_db.otp_logs.find_one(
+            {"user_id": user["id"], "otp_type": "email", "verified": False},
+            sort=[("created_at", -1)]
+        )
+        
+        sms_otp = await auth_db.otp_logs.find_one(
+            {"user_id": user["id"], "otp_type": "sms", "verified": False},
+            sort=[("created_at", -1)]
+        )
+        
+        return {
+            "user_email": user["email"],
+            "user_phone": user["phone"],
+            "email_otp": email_otp["otp_code"] if email_otp else None,
+            "sms_otp": sms_otp["otp_code"] if sms_otp else None,
+            "note": "DEV endpoint - remove in production"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Publisher routes
 @api_router.post("/publishers", response_model=Publisher)
 async def create_publisher(input: PublisherCreate, request: Request):
