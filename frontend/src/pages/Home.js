@@ -312,6 +312,7 @@ const Home = () => {
       </section>
 
       <MarketingFooter />
+      <Chatbot />
     </div>
   );
 };
