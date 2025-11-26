@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Target, BarChart3, Zap, Shield, Award, CheckCircle, Star, ArrowRight } from 'lucide-react';
 import MarketingNav from '@/components/MarketingNav';
 import MarketingFooter from '@/components/MarketingFooter';
+import Chatbot from '@/components/Chatbot';
 import { Helmet } from 'react-helmet';
 
 const Home = () => {
