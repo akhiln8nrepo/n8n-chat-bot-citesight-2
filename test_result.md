@@ -124,7 +124,7 @@ frontend:
     file: "/app/frontend/src/pages/Home.js, /app/frontend/src/components/Chatbot.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
