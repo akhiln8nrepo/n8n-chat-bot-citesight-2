@@ -101,3 +101,61 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "CiteSight SaaS Application - Track content presence in AI-generated summaries with authentication, marketing website, and chatbot features"
+
+backend:
+  - task: "Authentication System (Register, Login, 2FA, Password Reset)"
+    implemented: true
+    working: "USER_VERIFICATION_PENDING"
+    file: "/app/backend/server.py"
+    stuck_count: 3
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "USER_VERIFICATION_PENDING"
+        agent: "main"
+        comment: "Major refactor completed - migrated from broken PostgreSQL to pure MongoDB implementation. All SQLAlchemy and psycopg2-binary removed. Auth logic consolidated in server.py. User reported recurring issues, so this MUST be tested thoroughly. Need to verify: 1) Registration works 2) Login works 3) OTP can be retrieved from /api/dev/get-latest-otp 4) Multiple users have isolated data."
+
+frontend:
+  - task: "Chatbot Integration on Home Page"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Home.js, /app/frontend/src/components/Chatbot.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Just completed integration. Added <Chatbot /> component to Home.js (line 316). Component sends messages to webhook: https://saiakhilpullakhandam.app.n8n.cloud/webhook-test/e7667b5a-8192-4792-bd59-05abcbecb3b2. Need to verify: 1) Chatbot icon appears on home page 2) Chat window opens/closes correctly 3) POST request is sent to webhook when user sends message 4) UI/UX works smoothly."
+  
+  - task: "Marketing Website Pages"
+    implemented: true
+    working: "INCOMPLETE"
+    file: "/app/frontend/src/pages/"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "INCOMPLETE"
+        agent: "main"
+        comment: "Home page is complete with full content. Other pages (About, Pricing, Contact, Blog, FAQ, etc.) created but contain placeholder content only. This needs content population but no immediate testing required."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Chatbot Integration on Home Page"
+  stuck_tasks:
+    - "Authentication System (Register, Login, 2FA, Password Reset)"
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Initial test data created. Just completed chatbot integration on home page. Ready for frontend testing agent to verify chatbot functionality. Authentication system has been refactored but needs user verification - marking as critical priority."
