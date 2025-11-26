@@ -153,12 +153,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Chatbot Integration on Home Page"
+    - "Authentication System (Register, Login, 2FA, Password Reset)"
   stuck_tasks:
     - "Authentication System (Register, Login, 2FA, Password Reset)"
+    - "Chatbot Integration on Home Page"
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: "Initial test data created. Just completed chatbot integration on home page. Ready for frontend testing agent to verify chatbot functionality. Authentication system has been refactored but needs user verification - marking as critical priority."
+  - agent: "testing"
+    message: "CHATBOT TESTING COMPLETE - CRITICAL CORS ISSUE FOUND: The chatbot UI is working perfectly (floating button with red notification dot, chat window opens/closes smoothly, messages display correctly, POST requests are sent), but there's a CORS policy blocking webhook requests. The webhook endpoint https://saiakhilpullakhandam.app.n8n.cloud/webhook-test/e7667b5a-8192-4792-bd59-05abcbecb3b2 needs to be configured to allow requests from https://citesight-demo.preview.emergentagent.com domain. Users see error message: 'Sorry, I encountered an error. Please try again or contact support@citesight.com'. This is a backend/webhook configuration issue, not a frontend code issue."
