@@ -848,19 +848,34 @@ async def chatbot_webhook_proxy(data: ChatbotMessage):
                 timeout=10.0
             )
             
-            # Return the webhook response or a default success message
+            logger.info(f"Webhook response status: {response.status_code}")
+            logger.info(f"Webhook response body: {response.text}")
+            
+            # Return the webhook response
             if response.status_code == 200:
                 try:
-                    return response.json()
-                except:
-                    return {"reply": "Thank you for your message! Our team will get back to you soon."}
+                    webhook_data = response.json()
+                    logger.info(f"Webhook JSON response: {webhook_data}")
+                    
+                    # If webhook returns a response, use it
+                    if webhook_data:
+                        return webhook_data
+                    else:
+                        return {"reply": "Thank you for your message! Our team will get back to you soon."}
+                        
+                except Exception as json_error:
+                    logger.warning(f"Failed to parse webhook JSON: {json_error}, using text response")
+                    # If webhook returns plain text, wrap it in reply field
+                    return {"reply": response.text or "Thank you for your message! Our team will get back to you soon."}
             else:
-                logger.warning(f"Webhook returned status {response.status_code}")
+                logger.warning(f"Webhook returned non-200 status: {response.status_code}, body: {response.text}")
                 return {"reply": "Thank you for your message! Our team will get back to you soon."}
                 
+    except httpx.TimeoutException as e:
+        logger.error(f"Webhook timeout: {str(e)}")
+        return {"reply": "Thank you for your message! Our team will get back to you soon."}
     except Exception as e:
         logger.error(f"Error forwarding to webhook: {str(e)}")
-        # Don't fail - return success message to user
         return {"reply": "Thank you for your message! Our team will get back to you soon."}
 
 # Include the routers in the main app
