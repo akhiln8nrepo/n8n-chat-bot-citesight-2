@@ -138,6 +138,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "CORS FIX SUCCESSFUL! ✅ Fixed URL issue in Chatbot.js (was calling '/api/chatbot-webhook' instead of '/chatbot-webhook' causing double /api). ✅ Comprehensive testing completed: 100% API reliability (4/4 requests successful), all messages send without CORS errors, bot responds with success messages, message history preserved after close/reopen, UI works perfectly. ✅ No console errors detected. ✅ Backend proxy working correctly (200 OK responses). The chatbot is now fully functional and ready for production use."
+      - working: "NA"
+        agent: "main"
+        comment: "WEBHOOK URL UPDATED: User provided production webhook URL. Changed from test endpoint to: https://saiakhilpullakhandam.app.n8n.cloud/webhook/e7667b5a-8192-4792-bd59-05abcbecb3b2. Backend tested successfully (200 OK, returns {output: '...'}). Updated frontend to prioritize 'output' field in response parsing. Ready for testing to verify actual webhook responses display in chat UI."
   
   - task: "Marketing Website Pages"
     implemented: true
