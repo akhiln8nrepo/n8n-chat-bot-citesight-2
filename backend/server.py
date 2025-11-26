@@ -838,7 +838,7 @@ async def chatbot_webhook_proxy(data: ChatbotMessage):
     """Proxy endpoint to forward chatbot messages to n8n webhook (avoids CORS)"""
     import httpx
     
-    webhook_url = "https://saiakhilpullakhandam.app.n8n.cloud/webhook-test/e7667b5a-8192-4792-bd59-05abcbecb3b2"
+    webhook_url = "https://saiakhilpullakhandam.app.n8n.cloud/webhook/e7667b5a-8192-4792-bd59-05abcbecb3b2"
     
     try:
         async with httpx.AsyncClient() as client:
