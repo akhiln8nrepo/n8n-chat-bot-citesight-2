@@ -826,6 +826,43 @@ async def get_competitors(publisher_id: str):
     
     return competitors
 
+# ==================== CHATBOT WEBHOOK PROXY ====================
+
+class ChatbotMessage(BaseModel):
+    message: str
+    timestamp: str
+    user_info: Optional[Dict] = None
+
+@api_router.post("/chatbot-webhook")
+async def chatbot_webhook_proxy(data: ChatbotMessage):
+    """Proxy endpoint to forward chatbot messages to n8n webhook (avoids CORS)"""
+    import httpx
+    
+    webhook_url = "https://saiakhilpullakhandam.app.n8n.cloud/webhook-test/e7667b5a-8192-4792-bd59-05abcbecb3b2"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                webhook_url,
+                json=data.dict(),
+                timeout=10.0
+            )
+            
+            # Return the webhook response or a default success message
+            if response.status_code == 200:
+                try:
+                    return response.json()
+                except:
+                    return {"reply": "Thank you for your message! Our team will get back to you soon."}
+            else:
+                logger.warning(f"Webhook returned status {response.status_code}")
+                return {"reply": "Thank you for your message! Our team will get back to you soon."}
+                
+    except Exception as e:
+        logger.error(f"Error forwarding to webhook: {str(e)}")
+        # Don't fail - return success message to user
+        return {"reply": "Thank you for your message! Our team will get back to you soon."}
+
 # Include the routers in the main app
 app.include_router(api_router)
 
