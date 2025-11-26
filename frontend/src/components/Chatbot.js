@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
-import axios from 'axios';
 import { toast } from 'sonner';
-
-const WEBHOOK_URL = 'https://saiakhilpullakhandam.app.n8n.cloud/webhook-test/e7667b5a-8192-4792-bd59-05abcbecb3b2';
+import axiosInstance from '@/utils/axios';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +17,7 @@ const Chatbot = () => {
 
   const sendMessageToWebhook = async (message) => {
     try {
-      const response = await axios.post(WEBHOOK_URL, {
+      const response = await axiosInstance.post('/api/chatbot-webhook', {
         message: message,
         timestamp: new Date().toISOString(),
         user_info: {
