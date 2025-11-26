@@ -60,7 +60,9 @@ const Chatbot = () => {
       
       if (response) {
         // Try different response formats
-        if (response.reply) {
+        if (response.output) {
+          botReply = response.output;
+        } else if (response.reply) {
           botReply = response.reply;
         } else if (response.message) {
           botReply = response.message;
@@ -72,7 +74,7 @@ const Chatbot = () => {
           botReply = response;
         } else if (response.data) {
           // Handle nested data
-          botReply = response.data.reply || response.data.message || response.data.text || botReply;
+          botReply = response.data.output || response.data.reply || response.data.message || response.data.text || botReply;
         }
       }
       
