@@ -17,7 +17,7 @@ const Chatbot = () => {
 
   const sendMessageToWebhook = async (message) => {
     try {
-      const response = await axiosInstance.post('/api/chatbot-webhook', {
+      const response = await axiosInstance.post('/chatbot-webhook', {
         message: message,
         timestamp: new Date().toISOString(),
         user_info: {
