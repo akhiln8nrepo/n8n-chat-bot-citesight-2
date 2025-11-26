@@ -121,10 +121,10 @@ frontend:
   - task: "Chatbot Integration on Home Page"
     implemented: true
     working: false
-    file: "/app/frontend/src/pages/Home.js, /app/frontend/src/components/Chatbot.js"
+    file: "/app/frontend/src/pages/Home.js, /app/frontend/src/components/Chatbot.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -132,6 +132,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "CRITICAL ISSUE: CORS policy blocking webhook requests. Testing results: ✅ Chatbot UI works perfectly (button appears with red dot, window opens/closes, messages display correctly) ✅ POST request is sent to webhook URL ❌ CORS error prevents webhook from receiving data: 'Access-Control-Allow-Origin' header missing. Error: 'Access to XMLHttpRequest blocked by CORS policy'. Bot shows error message: 'Sorry, I encountered an error. Please try again or contact support@citesight.com'. The webhook endpoint needs CORS configuration to allow requests from https://citesight-demo.preview.emergentagent.com domain."
+      - working: "NA"
+        agent: "main"
+        comment: "CORS FIX: Created backend proxy endpoint POST /api/chatbot-webhook that forwards messages to n8n webhook (eliminates CORS). Updated Chatbot.js to use axiosInstance and call /api/chatbot-webhook instead of direct webhook URL. Backend restarted successfully. Ready for re-testing to verify fix works."
   
   - task: "Marketing Website Pages"
     implemented: true
