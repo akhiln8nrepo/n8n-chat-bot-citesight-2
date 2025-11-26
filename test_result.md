@@ -174,3 +174,5 @@ agent_communication:
     message: "CORS FIX IMPLEMENTED: Created backend proxy endpoint /api/chatbot-webhook in server.py to forward chatbot messages to n8n webhook. This avoids CORS issues. Updated Chatbot.js to use the proxy endpoint instead of direct webhook call. Backend restarted. Ready for re-testing."
   - agent: "testing"
     message: "CHATBOT CORS FIX VERIFIED SUCCESSFUL! ✅ Fixed URL configuration issue in Chatbot.js and conducted comprehensive testing. Results: 100% API reliability (4/4 requests successful), zero CORS errors, perfect UI/UX experience, message history preservation, and successful backend proxy integration. The chatbot is now fully functional and ready for production. No further testing needed for this feature."
+  - agent: "main"
+    message: "WEBHOOK URL UPDATED TO PRODUCTION: Changed webhook URL from test endpoint to production endpoint: https://saiakhilpullakhandam.app.n8n.cloud/webhook/e7667b5a-8192-4792-bd59-05abcbecb3b2. Tested successfully - webhook returns 200 OK with response in 'output' field. Updated frontend to handle 'output' response format. Ready for re-testing to verify actual webhook responses display in chat."
