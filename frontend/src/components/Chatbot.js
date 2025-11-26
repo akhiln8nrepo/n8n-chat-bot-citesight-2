@@ -53,16 +53,40 @@ const Chatbot = () => {
       // Send to webhook
       const response = await sendMessageToWebhook(inputMessage);
       
+      console.log('Webhook response:', response);
+      
+      // Extract bot reply from various possible response formats
+      let botReply = 'Thank you for your message! Our team will get back to you soon.';
+      
+      if (response) {
+        // Try different response formats
+        if (response.reply) {
+          botReply = response.reply;
+        } else if (response.message) {
+          botReply = response.message;
+        } else if (response.text) {
+          botReply = response.text;
+        } else if (response.response) {
+          botReply = response.response;
+        } else if (typeof response === 'string') {
+          botReply = response;
+        } else if (response.data) {
+          // Handle nested data
+          botReply = response.data.reply || response.data.message || response.data.text || botReply;
+        }
+      }
+      
       // Add bot response
       const botMessage = {
         type: 'bot',
-        text: response?.reply || 'Thank you for your message! Our team will get back to you soon.',
+        text: botReply,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, botMessage]);
       toast.success('Message sent successfully!');
     } catch (error) {
+      console.error('Chatbot error:', error);
       const errorMessage = {
         type: 'bot',
         text: 'Sorry, I encountered an error. Please try again or contact support@citesight.com',
