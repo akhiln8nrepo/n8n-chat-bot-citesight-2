@@ -162,7 +162,6 @@ test_plan:
     - "Authentication System (Register, Login, 2FA, Password Reset)"
   stuck_tasks:
     - "Authentication System (Register, Login, 2FA, Password Reset)"
-    - "Chatbot Integration on Home Page"
   test_all: false
   test_priority: "high_first"
 
