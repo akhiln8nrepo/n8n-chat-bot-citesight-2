@@ -117,6 +117,21 @@ backend:
         agent: "main"
         comment: "Major refactor completed - migrated from broken PostgreSQL to pure MongoDB implementation. All SQLAlchemy and psycopg2-binary removed. Auth logic consolidated in server.py. User reported recurring issues, so this MUST be tested thoroughly. Need to verify: 1) Registration works 2) Login works 3) OTP can be retrieved from /api/dev/get-latest-otp 4) Multiple users have isolated data."
 
+  - task: "Publisher and Content Creation APIs"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "User reported 'adding publishers and content is not working'. Investigated and found root cause."
+      - working: true
+        agent: "main"
+        comment: "FIXED: Root cause was incorrect import in get_current_user_from_token() function. It was trying to import verify_token from 'auth_utils' module which doesn't exist - verify_token is already defined in server.py. Removed the incorrect import statement. Tested complete flow end-to-end: 1) Register user 2) Verify OTP 3) Login and get JWT token 4) Create publisher with token 5) Create content with publisher_id 6) Fetch content list. All APIs working perfectly. User_id now correctly extracted from JWT token and associated with publishers/content for proper data isolation."
+
 frontend:
   - task: "Chatbot Integration on Home Page"
     implemented: true
