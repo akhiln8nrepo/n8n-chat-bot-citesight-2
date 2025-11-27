@@ -250,12 +250,11 @@ async def get_current_user_from_token(authorization: str = None):
     
     token = authorization.split(' ')[1]
     try:
-        from auth_utils import verify_token
         payload = verify_token(token)
         if payload:
             return payload.get('user_id')
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Token verification failed: {str(e)}")
     return None
 
 # ==================== ROUTES ====================
