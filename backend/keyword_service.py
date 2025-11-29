@@ -171,18 +171,18 @@ search_volume must be: high, medium, or low"""
         
     except Exception as e:
         logger.error(f"Error discovering LLM questions: {e}")
-        # Return fallback questions
+        # Return fallback questions with estimated difficulty
         return [
-            {"question": f"What is the best {keyword}?", "search_volume": "high"},
-            {"question": f"How to choose {keyword}?", "search_volume": "high"},
-            {"question": f"Top 10 {keyword} recommendations", "search_volume": "medium"},
-            {"question": f"{keyword} buying guide", "search_volume": "medium"},
-            {"question": f"How does {keyword} work?", "search_volume": "low"},
-            {"question": f"{keyword} for beginners", "search_volume": "medium"},
-            {"question": f"Best budget {keyword}", "search_volume": "high"},
-            {"question": f"{keyword} pros and cons", "search_volume": "low"},
-            {"question": f"How to use {keyword}", "search_volume": "medium"},
-            {"question": f"{keyword} reviews and ratings", "search_volume": "high"}
+            {"question": f"What is the best {keyword}?", "search_volume": "high", "difficulty": 75, "difficulty_level": "High", "competing_pages": 10, "difficulty_analysis": "High competition"},
+            {"question": f"How to choose {keyword}?", "search_volume": "high", "difficulty": 70, "difficulty_level": "High", "competing_pages": 10, "difficulty_analysis": "High competition"},
+            {"question": f"Top 10 {keyword} recommendations", "search_volume": "medium", "difficulty": 55, "difficulty_level": "Medium", "competing_pages": 8, "difficulty_analysis": "Moderate competition"},
+            {"question": f"{keyword} buying guide", "search_volume": "medium", "difficulty": 50, "difficulty_level": "Medium", "competing_pages": 7, "difficulty_analysis": "Moderate competition"},
+            {"question": f"How does {keyword} work?", "search_volume": "low", "difficulty": 35, "difficulty_level": "Low", "competing_pages": 5, "difficulty_analysis": "Low competition"},
+            {"question": f"{keyword} for beginners", "search_volume": "medium", "difficulty": 45, "difficulty_level": "Medium", "competing_pages": 6, "difficulty_analysis": "Moderate competition"},
+            {"question": f"Best budget {keyword}", "search_volume": "high", "difficulty": 65, "difficulty_level": "High", "competing_pages": 9, "difficulty_analysis": "High competition"},
+            {"question": f"{keyword} pros and cons", "search_volume": "low", "difficulty": 40, "difficulty_level": "Low", "competing_pages": 5, "difficulty_analysis": "Low competition"},
+            {"question": f"How to use {keyword}", "search_volume": "medium", "difficulty": 50, "difficulty_level": "Medium", "competing_pages": 7, "difficulty_analysis": "Moderate competition"},
+            {"question": f"{keyword} reviews and ratings", "search_volume": "high", "difficulty": 80, "difficulty_level": "High", "competing_pages": 10, "difficulty_analysis": "Very high competition"}
         ]
 
 
