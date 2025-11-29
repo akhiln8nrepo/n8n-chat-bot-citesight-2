@@ -93,10 +93,12 @@ const ContentDetail = () => {
   const handleRecommendationsApplied = async (data) => {
     toast.success('Content updated with recommendations!');
     await fetchContentDetail(); // Refresh content
-    // Switch to overview tab to show updated content
-    setTimeout(() => {
-      setActiveTab('overview');
-    }, 1000);
+  };
+
+  const handleViewUpdated = async () => {
+    await fetchContentDetail(); // Refresh content
+    setActiveTab('overview'); // Switch to overview to show updated content
+    toast.success('View updated! Check the Overview tab.');
   };
 
   if (loading) {
