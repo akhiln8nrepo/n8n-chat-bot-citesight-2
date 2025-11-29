@@ -264,7 +264,26 @@ const ContentDetail = () => {
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       className="form-input"
-                    >\n                      {keywords.map((kw) => (\n                        <option key={kw.id} value={kw.keyword}>\n                          {kw.keyword}\n                        </option>\n                      ))}\n                    </select>\n                  </div>\n\n                  {keyword && (\n                    <KeywordAnalysis\n                      keyword={keyword}\n                      contentId={contentId}\n                      onAnalysisComplete={handleAnalysisComplete}\n                    />\n                  )}\n                </div>\n              )}\n            </div>\n          )}
+                    >
+                      {keywords.map((kw) => (
+                        <option key={kw.id} value={kw.keyword}>
+                          {kw.keyword}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {keyword && (
+                    <KeywordAnalysis
+                      keyword={keyword}
+                      contentId={contentId}
+                      onAnalysisComplete={handleAnalysisComplete}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {activeTab === 'recommendations' && (
             <ContentRecommendations
