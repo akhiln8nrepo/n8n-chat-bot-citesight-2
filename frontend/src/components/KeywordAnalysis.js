@@ -33,6 +33,9 @@ const Sparkline = ({ data, color = '#3b82f6' }) => {
 const KeywordAnalysis = ({ keyword, contentId, onAnalysisComplete }) => {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+  const [filterVolume, setFilterVolume] = useState('all');
+  const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [filterIntent, setFilterIntent] = useState('all');
 
   const handleAnalyze = async () => {
     if (!keyword) {
