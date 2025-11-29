@@ -64,6 +64,36 @@ const KeywordAnalysis = ({ keyword, contentId, onAnalysisComplete }) => {
     }
   };
 
+  // Filter questions based on selected filters
+  const getFilteredQuestions = () => {
+    if (!analysis || !analysis.llm_questions) return [];
+    
+    let filtered = analysis.llm_questions;
+
+    // Filter by volume
+    if (filterVolume !== 'all') {
+      filtered = filtered.filter(q => q.search_volume === filterVolume);
+    }
+
+    // Filter by difficulty
+    if (filterDifficulty !== 'all') {
+      filtered = filtered.filter(q => {
+        const diff = q.difficulty || 0;
+        if (filterDifficulty === 'low') return diff < 40;
+        if (filterDifficulty === 'medium') return diff >= 40 && diff < 70;
+        if (filterDifficulty === 'high') return diff >= 70;
+        return true;
+      });
+    }
+
+    // Filter by intent
+    if (filterIntent !== 'all') {
+      filtered = filtered.filter(q => q.intent === filterIntent);
+    }
+
+    return filtered;
+  };
+
   return (
     <div className="space-y-6">
       {/* Analysis Trigger */}
