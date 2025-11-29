@@ -36,6 +36,7 @@ function App() {
           <Route path="/auth/logout" element={<Logout />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/content" element={<ContentManagement />} />
+          <Route path="/content/:contentId" element={<ContentDetail />} />
           <Route path="/keywords" element={<KeywordMonitoring />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/competitors" element={<CompetitorAnalysis />} />
