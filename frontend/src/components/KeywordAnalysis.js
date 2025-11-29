@@ -3,7 +3,7 @@ import axios from '@/utils/axios';
 import { Search, Lightbulb, TrendingUp, ExternalLink, AlertCircle, CheckCircle2, Loader2, Info, ShoppingCart, Navigation2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Simple Sparkline Component
+// Simple Sparkline Component - Enhanced Size
 const Sparkline = ({ data, color = '#3b82f6' }) => {
   if (!data || data.length === 0) return null;
   
@@ -18,12 +18,12 @@ const Sparkline = ({ data, color = '#3b82f6' }) => {
   }).join(' ');
   
   return (
-    <svg width="80" height="24" className="inline-block">
+    <svg width="140" height="40" className="inline-block">
       <polyline
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth="2"
+        strokeWidth="3"
         vectorEffect="non-scaling-stroke"
       />
     </svg>
