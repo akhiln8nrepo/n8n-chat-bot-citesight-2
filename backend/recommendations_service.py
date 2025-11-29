@@ -95,14 +95,24 @@ Be specific and actionable. Focus on improvements that will increase AI visibili
         response = openrouter_client.chat.completions.create(
             model="openai/gpt-4o",
             messages=[
-                {"role": "system", "content": "You are an expert content optimizer specializing in AI visibility. Return valid JSON only."},
+                {"role": "system", "content": "You are an expert content optimizer specializing in AI visibility. Return ONLY valid JSON, no markdown formatting."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=3000
+            max_tokens=3000,
+            response_format={"type": "json_object"}
         )
         
-        recommendations = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        
+        # Clean up potential markdown formatting
+        import re
+        if "```json" in content:
+            content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
+        elif "```" in content:
+            content = re.search(r'```\s*(.*?)\s*```', content, re.DOTALL).group(1)
+        
+        recommendations = json.loads(content.strip())
         
         logger.info("Comprehensive recommendations generated successfully")
         return recommendations
