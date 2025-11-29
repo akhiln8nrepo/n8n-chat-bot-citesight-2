@@ -226,8 +226,8 @@ search_volume must be: high, medium, or low"""
                 q['competing_pages'] = 0
                 q['difficulty_analysis'] = "Unable to calculate"
         
-        # For remaining questions (6-10), assign estimated difficulty
-        for i, q in enumerate(questions[5:], start=5):
+        # For remaining questions (11+), assign estimated difficulty
+        for i, q in enumerate(questions[10:], start=10):
             # Use search volume as proxy for difficulty
             if q.get('search_volume') == 'high':
                 q['difficulty'] = 70
