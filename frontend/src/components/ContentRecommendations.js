@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from '@/utils/axios';
-import { Sparkles, CheckCircle2, Loader2, ArrowRight, Layout, FileText, Shield, HelpCircle, Target, Zap } from 'lucide-react';
+import { Sparkles, CheckCircle2, Loader2, Layout, FileText, X, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ContentRecommendations = ({ contentId, onApply }) => {
@@ -8,6 +8,8 @@ const ContentRecommendations = ({ contentId, onApply }) => {
   const [applying, setApplying] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState('base');
+  const [showOptimizedModal, setShowOptimizedModal] = useState(false);
+  const [optimizedContent, setOptimizedContent] = useState(null);
 
   const generateRecommendations = async () => {
     setLoading(true);
@@ -36,7 +38,10 @@ const ContentRecommendations = ({ contentId, onApply }) => {
         { content_id: contentId, recommendations }
       );
       
+      setOptimizedContent(response.data);
+      setShowOptimizedModal(true);
       toast.success('Recommendations applied successfully!');
+      
       if (onApply) {
         onApply(response.data);
       }
@@ -112,6 +117,20 @@ const ContentRecommendations = ({ contentId, onApply }) => {
             </div>
           </div>
 
+          {recommendations.faqs && recommendations.faqs.length > 0 && (
+            <div className="bg-white rounded-xl p-6 border border-slate-200">
+              <h4 className="font-bold text-slate-900 mb-3">Recommended FAQs</h4>
+              <div className="space-y-3">
+                {recommendations.faqs.slice(0, 3).map((faq, index) => (
+                  <div key={index} className="p-4 bg-indigo-50 rounded-lg">
+                    <div className="font-medium text-slate-900 mb-2">Q: {faq.question}</div>
+                    <div className="text-sm text-slate-600">A: {faq.answer}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -134,6 +153,85 @@ const ContentRecommendations = ({ contentId, onApply }) => {
                     Implement All
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Optimized Content Modal */}
+      {showOptimizedModal && optimizedContent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900">Optimized Content</h3>
+                <p className="text-sm text-slate-600 mt-1">Your content has been updated with all recommendations</p>
+              </div>
+              <button
+                onClick={() => setShowOptimizedModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 size={20} className="text-green-600" />
+                    <h4 className="font-bold text-slate-900">New Title</h4>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-slate-900 font-medium">{optimizedContent.optimized_title}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 size={20} className="text-green-600" />
+                    <h4 className="font-bold text-slate-900">Updated Content</h4>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-lg max-h-96 overflow-y-auto">
+                    <p className="text-slate-700 whitespace-pre-wrap">{optimizedContent.optimized_content}</p>
+                  </div>
+                </div>
+
+                {optimizedContent.changes_summary && optimizedContent.changes_summary.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 size={20} className="text-blue-600" />
+                      <h4 className="font-bold text-slate-900">Changes Applied</h4>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <ul className="list-disc list-inside space-y-1">
+                        {optimizedContent.changes_summary.map((change, index) => (
+                          <li key={index} className="text-sm text-slate-700">{change}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowOptimizedModal(false);
+                  window.location.reload();
+                }}
+                className="btn-primary flex-1"
+              >
+                <ExternalLink size={18} className="mr-2" />
+                Refresh to See Changes
+              </button>
+              <button
+                onClick={() => setShowOptimizedModal(false)}
+                className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+              >
+                Close
               </button>
             </div>
           </div>
