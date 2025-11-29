@@ -102,14 +102,77 @@ const KeywordAnalysis = ({ keyword, contentId, onAnalysisComplete }) => {
               <div className="flex items-center gap-2">
                 <Lightbulb size={24} className="text-yellow-500" />
                 <h3 className="text-lg font-bold text-slate-900">Previously Asked LLM Questions</h3>
+                <span className="text-sm text-slate-500">({getFilteredQuestions().length} questions)</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-600">
                 <Info size={14} />
                 <span>Intent: I=Info, C=Commercial, T=Transaction, N=Navigation</span>
               </div>
             </div>
+
+            {/* Filter Controls */}
+            <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-slate-700">Volume:</label>
+                  <select
+                    value={filterVolume}
+                    onChange={(e) => setFilterVolume(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-slate-700">Difficulty:</label>
+                  <select
+                    value={filterDifficulty}
+                    onChange={(e) => setFilterDifficulty(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All</option>
+                    <option value="low">Low (&lt;40%)</option>
+                    <option value="medium">Medium (40-69%)</option>
+                    <option value="high">High (≥70%)</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-slate-700">Intent:</label>
+                  <select
+                    value={filterIntent}
+                    onChange={(e) => setFilterIntent(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All</option>
+                    <option value="I">Informational</option>
+                    <option value="C">Commercial</option>
+                    <option value="T">Transactional</option>
+                    <option value="N">Navigational</option>
+                  </select>
+                </div>
+
+                {(filterVolume !== 'all' || filterDifficulty !== 'all' || filterIntent !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setFilterVolume('all');
+                      setFilterDifficulty('all');
+                      setFilterIntent('all');
+                    }}
+                    className="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-3">
-              {analysis.llm_questions?.map((item, index) => (
+              {getFilteredQuestions().map((item, index) => (
                 <div key={index} className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:shadow-md transition-shadow">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 text-blue-600 font-semibold text-sm">
                     {index + 1}
