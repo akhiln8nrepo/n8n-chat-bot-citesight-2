@@ -268,26 +268,42 @@ const ContentDetail = () => {
                 <div className="space-y-6">
                   {/* Keyword Selector */}
                   <div className="bg-white rounded-xl p-6 border border-slate-200">
-                    <label className="form-label">Select Keyword to Analyze</label>
-                    <select
-                      value={keyword}
-                      onChange={(e) => setKeyword(e.target.value)}
-                      className="form-input"
-                    >
-                      {keywords.map((kw) => (
-                        <option key={kw.id} value={kw.keyword}>
-                          {kw.keyword}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mb-4">
+                      <div className="text-sm text-slate-600 mb-2">
+                        You have {keywords.length} keyword(s) for this content
+                      </div>
+                      <label className="form-label">Select Keyword to Analyze</label>
+                      <select
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                        className="form-input"
+                      >
+                        {keywords.map((kw) => (
+                          <option key={kw.id} value={kw.keyword}>
+                            {kw.keyword}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {!keyword && (
+                      <div className="text-sm text-red-600">
+                        Please select a keyword from the dropdown above
+                      </div>
+                    )}
                   </div>
 
-                  {keyword && (
+                  {keyword ? (
                     <KeywordAnalysis
                       keyword={keyword}
                       contentId={contentId}
                       onAnalysisComplete={handleAnalysisComplete}
                     />
+                  ) : (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+                      <p className="text-blue-800">
+                        Select a keyword from the dropdown above to start analysis
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
