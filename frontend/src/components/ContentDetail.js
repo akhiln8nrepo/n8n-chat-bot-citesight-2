@@ -31,6 +31,13 @@ const ContentDetail = () => {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    // Refresh keywords when switching to keyword-analysis tab
+    if (activeTab === 'keyword-analysis' && !loading) {
+      fetchContentDetail();
+    }
+  }, [activeTab]);
+
   const fetchContentDetail = async () => {
     try {
       const response = await axios.get(`/content/${contentId}`);
