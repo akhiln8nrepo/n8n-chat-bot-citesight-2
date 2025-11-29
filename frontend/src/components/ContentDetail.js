@@ -90,9 +90,13 @@ const ContentDetail = () => {
     toast.success('Analysis complete! Check recommendations tab.');
   };
 
-  const handleRecommendationsApplied = (data) => {
+  const handleRecommendationsApplied = async (data) => {
     toast.success('Content updated with recommendations!');
-    fetchContentDetail(); // Refresh content
+    await fetchContentDetail(); // Refresh content
+    // Switch to overview tab to show updated content
+    setTimeout(() => {
+      setActiveTab('overview');
+    }, 1000);
   };
 
   if (loading) {
