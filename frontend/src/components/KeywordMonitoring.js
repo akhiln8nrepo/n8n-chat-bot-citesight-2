@@ -1,23 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '@/utils/axios';
-import { Target, Plus, X } from 'lucide-react';
+import { Target, Plus, Sparkles, Search, TrendingUp, ExternalLink } from 'lucide-react';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
 const KeywordMonitoring = () => {
+  const navigate = useNavigate();
   const [content, setContent] = useState([]);
   const [keywords, setKeywords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedContentId, setSelectedContentId] = useState('');
-
-  const [newKeyword, setNewKeyword] = useState({
-    content_id: '',
-    keyword: ''
-  });
+  const [contentKeywordMap, setContentKeywordMap] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -25,21 +18,21 @@ const KeywordMonitoring = () => {
 
   const fetchData = async () => {
     try {
-      const contentRes = await axios.get(`/content`);
+      const contentRes = await axios.get('/content');
       setContent(contentRes.data);
       
-      if (contentRes.data.length > 0) {
-        const allKeywords = [];
-        for (const item of contentRes.data) {
-          try {
-            const keywordsRes = await axios.get(`/keywords/${item.id}`);
-            allKeywords.push(...keywordsRes.data);
-          } catch (error) {
-            console.error(`Error fetching keywords for content ${item.id}:`, error);
-          }
+      const keywordsRes = await axios.get('/keywords');
+      setKeywords(keywordsRes.data);
+      
+      // Create a map of content_id to keywords
+      const kwMap = {};
+      keywordsRes.data.forEach(kw => {
+        if (!kwMap[kw.content_id]) {
+          kwMap[kw.content_id] = [];
         }
-        setKeywords(allKeywords);
-      }
+        kwMap[kw.content_id].push(kw);
+      });
+      setContentKeywordMap(kwMap);
       
       setLoading(false);
     } catch (error) {
@@ -49,203 +42,139 @@ const KeywordMonitoring = () => {
     }
   };
 
-  const handleAddKeyword = async () => {
-    if (!newKeyword.content_id || !newKeyword.keyword) {
-      toast.error('Please select content and enter a keyword');
-      return;
-    }
-
-    try {
-      await axios.post(`/keywords`, newKeyword);
-      toast.success('Keyword added and tracking started!');
-      setShowAddModal(false);
-      setNewKeyword({ content_id: '', keyword: '' });
-      fetchData();
-    } catch (error) {
-      console.error('Error adding keyword:', error);
-      toast.error('Failed to add keyword');
-    }
+  const handleAnalyzeKeyword = (contentId) => {
+    navigate(`/content/${contentId}?tab=keyword-analysis`);
   };
-
-  const filterKeywordsByContent = (contentId) => {
-    if (!contentId) return keywords;
-    return keywords.filter(k => k.content_id === contentId);
-  };
-
-  const filteredKeywords = filterKeywordsByContent(selectedContentId);
 
   if (loading) {
     return (
       <div className="dashboard-container">
         <Navigation />
-        <div className="flex items-center justify-center h-screen">
-          <div className="spinner" data-testid="loading-spinner"></div>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600">Loading keywords...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container" data-testid="keyword-monitoring-page">
+    <div className="dashboard-container">
       <Navigation />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex justify-between items-center mb-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Keyword Monitoring</h1>
-            <p className="text-base text-slate-600">Track keyword performance across AI platforms</p>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Keyword Monitoring</h1>
+            <p className="text-slate-600">Track and analyze keywords across your content with AI-powered insights</p>
           </div>
           <button
-            data-testid="add-keyword-btn"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => navigate('/content')}
             className="btn-primary flex items-center gap-2"
           >
             <Plus size={20} />
-            Add Keyword
+            Add Content & Keywords
           </button>
         </div>
 
-        {/* Filter */}
-        <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200">
-          <label className="form-label">Filter by Content</label>
-          <select
-            data-testid="content-filter"
-            className="form-input"
-            value={selectedContentId}
-            onChange={(e) => setSelectedContentId(e.target.value)}
-          >
-            <option value="">All Content</option>
-            {content.map((item) => (
-              <option key={item.id} value={item.id}>{item.title}</option>
-            ))}
-          </select>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-slate-600">Total Keywords</div>
+              <Target size={20} className="text-blue-600" />
+            </div>
+            <div className="text-3xl font-bold text-slate-900">{keywords.length}</div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-slate-600">Content Pieces</div>
+              <TrendingUp size={20} className="text-green-600" />
+            </div>
+            <div className="text-3xl font-bold text-slate-900">{content.length}</div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-slate-600">Avg Keywords/Content</div>
+              <Search size={20} className="text-purple-600" />
+            </div>
+            <div className="text-3xl font-bold text-slate-900">
+              {content.length > 0 ? Math.round((keywords.length / content.length) * 10) / 10 : 0}
+            </div>
+          </div>
         </div>
 
-        {filteredKeywords.length === 0 ? (
+        {/* Content & Keywords List */}
+        {content.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
-            <Target size={64} className="mx-auto mb-4 text-slate-300" />
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No Keywords Tracked</h3>
-            <p className="text-slate-600 mb-6">Start monitoring keywords to see how they perform across AI platforms.</p>
+            <Target size={48} className="mx-auto text-slate-300 mb-4" />
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No Content Yet</h3>
+            <p className="text-slate-600 mb-6">Start by adding content and keywords to monitor</p>
             <button
-              data-testid="add-first-keyword-btn"
-              onClick={() => setShowAddModal(true)}
+              onClick={() => navigate('/content')}
               className="btn-primary"
             >
-              Add Your First Keyword
+              Add Your First Content
             </button>
           </div>
         ) : (
-          <div className="space-y-4" data-testid="keywords-list">
-            {filteredKeywords.map((keyword, index) => {
-              const contentItem = content.find(c => c.id === keyword.content_id);
+          <div className="space-y-4">
+            {content.map((item) => {
+              const itemKeywords = contentKeywordMap[item.id] || [];
               return (
-                <div
-                  key={index}
-                  className="bg-white rounded-xl p-6 border border-slate-200 hover:border-sky-500 transition-colors"
-                  data-testid={`keyword-card-${index}`}
-                >
-                  <div className="flex justify-between items-start mb-4">
+                <div key={item.id} className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        <ExternalLink size={14} />
+                        {item.url}
+                      </a>
+                    </div>
+                    <button
+                      onClick={() => handleAnalyzeKeyword(item.id)}
+                      className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <Sparkles size={18} />
+                      Analyze Keywords
+                    </button>
+                  </div>
+                  
+                  {itemKeywords.length > 0 ? (
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{keyword.keyword}</h3>
-                      <p className="text-sm text-slate-600">Content: {contentItem?.title || 'Unknown'}</p>
-                    </div>
-                    {keyword.avg_position && (
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-sky-600">#{keyword.avg_position}</div>
-                        <div className="text-xs text-slate-500">Avg Position</div>
+                      <div className="text-sm text-slate-600 mb-2">Keywords:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {itemKeywords.map((kw) => (
+                          <div
+                            key={kw.id}
+                            className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+                          >
+                            {kw.keyword}
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-slate-700 mb-2">Found on platforms:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {keyword.platforms_found && keyword.platforms_found.length > 0 ? (
-                        keyword.platforms_found.map((platform, idx) => (
-                          <span key={idx} className="platform-chip">
-                            {platform}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-slate-500">Not found on any platform yet</span>
-                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-sm text-slate-400 italic">
+                      No keywords added yet. Click "Analyze Keywords" to add and analyze.
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
       </div>
-
-      {/* Add Keyword Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-testid="add-keyword-modal">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Add Keyword</h2>
-              <button
-                data-testid="close-keyword-modal"
-                onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {content.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-slate-600 mb-4">Please add content first before tracking keywords.</p>
-                <button
-                  data-testid="go-to-content-btn"
-                  onClick={() => window.location.href = '/content'}
-                  className="btn-primary"
-                >
-                  Add Content
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="form-label">Select Content</label>
-                  <select
-                    data-testid="keyword-content-select"
-                    className="form-input"
-                    value={newKeyword.content_id}
-                    onChange={(e) => setNewKeyword({...newKeyword, content_id: e.target.value})}
-                  >
-                    <option value="">Select content to track</option>
-                    {content.map((item) => (
-                      <option key={item.id} value={item.id}>{item.title}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="form-label">Keyword</label>
-                  <input
-                    data-testid="keyword-input"
-                    type="text"
-                    className="form-input"
-                    placeholder="AI content marketing"
-                    value={newKeyword.keyword}
-                    onChange={(e) => setNewKeyword({...newKeyword, keyword: e.target.value})}
-                  />
-                  <p className="text-xs text-slate-500 mt-2">Enter a keyword or phrase to monitor across AI platforms</p>
-                </div>
-
-                <button
-                  data-testid="submit-keyword-btn"
-                  onClick={handleAddKeyword}
-                  className="btn-primary w-full"
-                >
-                  Start Tracking Keyword
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
