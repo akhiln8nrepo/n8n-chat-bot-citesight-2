@@ -95,9 +95,15 @@ const KeywordAnalysis = ({ keyword, contentId, onAnalysisComplete }) => {
         <div className="space-y-6">
           {/* LLM Questions */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <div className="flex items-center gap-2 mb-4">
-              <Lightbulb size={24} className="text-yellow-500" />
-              <h3 className="text-lg font-bold text-slate-900">Previously Asked LLM Questions</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Lightbulb size={24} className="text-yellow-500" />
+                <h3 className="text-lg font-bold text-slate-900">Previously Asked LLM Questions</h3>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <Info size={14} />
+                <span>Intent: I=Info, C=Commercial, T=Transaction, N=Navigation</span>
+              </div>
             </div>
             <div className="space-y-3">
               {analysis.llm_questions?.map((item, index) => (
