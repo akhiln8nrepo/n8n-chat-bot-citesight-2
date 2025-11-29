@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from '@/utils/axios';
-import { ArrowLeft, FileText, Calendar, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, ExternalLink, Loader2, Tag, Plus, X } from 'lucide-react';
 import Navigation from './Navigation';
 import KeywordAnalysis from './KeywordAnalysis';
 import ContentRecommendations from './ContentRecommendations';
