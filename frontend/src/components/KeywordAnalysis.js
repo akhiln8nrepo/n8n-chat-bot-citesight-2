@@ -74,19 +74,45 @@ const KeywordAnalysis = ({ keyword, contentId, onAnalysisComplete }) => {
             </div>
             <div className="space-y-3">
               {analysis.llm_questions?.map((item, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                <div key={index} className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:shadow-md transition-shadow">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 text-blue-600 font-semibold text-sm">
                     {index + 1}
                   </div>
                   <div className="flex-1">
-                    <p className="text-slate-900 font-medium">{item.question}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${
-                      item.search_volume === 'high' ? 'bg-red-100 text-red-700' :
-                      item.search_volume === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
-                      {item.search_volume} search volume
-                    </span>
+                    <p className="text-slate-900 font-medium mb-2">{item.question}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        item.search_volume === 'high' ? 'bg-red-100 text-red-700' :
+                        item.search_volume === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        {item.search_volume} volume
+                      </span>
+                      {item.difficulty !== undefined && (
+                        <>
+                          <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                            item.difficulty >= 70 ? 'bg-red-100 text-red-700' :
+                            item.difficulty >= 40 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>
+                            {item.difficulty}% difficulty
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            ({item.competing_pages || 0} competing pages)
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {item.difficulty_analysis && (
+                      <p className="text-xs text-slate-600 mt-2">{item.difficulty_analysis}</p>
+                    )}
+                  </div>
+                  <div className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                    item.difficulty >= 70 ? 'bg-red-100 text-red-700' :
+                    item.difficulty >= 40 ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    {item.difficulty_level || 'N/A'}
                   </div>
                 </div>
               ))}
