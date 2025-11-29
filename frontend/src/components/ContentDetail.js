@@ -138,7 +138,7 @@ const ContentDetail = () => {
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-slate-900 mb-2">{content.title}</h1>
-                <div className="flex items-center gap-4 text-sm text-slate-600">
+                <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
                   <div className="flex items-center gap-1">
                     <Calendar size={16} />
                     {new Date(content.created_at).toLocaleDateString()}
@@ -152,6 +152,36 @@ const ContentDetail = () => {
                     <ExternalLink size={16} />
                     View Live
                   </a>
+                </div>
+                
+                {/* Keywords Section */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1 text-sm text-slate-600">
+                    <Tag size={16} />
+                    <span className="font-medium">Keywords:</span>
+                  </div>
+                  {keywords.length > 0 ? (
+                    keywords.map((kw) => (
+                      <div key={kw.id} className="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                        <span>{kw.keyword}</span>
+                        <button
+                          onClick={() => handleDeleteKeyword(kw.id)}
+                          className="hover:text-blue-900"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-400">No keywords added</span>
+                  )}
+                  <button
+                    onClick={() => setShowAddKeyword(true)}
+                    className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-sm"
+                  >
+                    <Plus size={14} />
+                    Add Keyword
+                  </button>
                 </div>
               </div>
             </div>
