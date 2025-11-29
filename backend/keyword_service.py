@@ -135,7 +135,38 @@ search_volume must be: high, medium, or low"""
             logger.warning(f"No questions returned from API for {keyword}, using fallback")
             raise Exception("No questions in API response")
         
-        logger.info(f"Discovered {len(questions)} questions for keyword: {keyword}")
+        # Calculate difficulty for each question (for first 5 to save API calls)
+        logger.info(f"Calculating keyword difficulty for top 5 questions...")
+        for i, q in enumerate(questions[:5]):
+            try:
+                difficulty_data = await calculate_keyword_difficulty(q['question'])
+                q['difficulty'] = difficulty_data['difficulty']
+                q['difficulty_level'] = difficulty_data['level']
+                q['competing_pages'] = difficulty_data['competing_pages']
+                q['difficulty_analysis'] = difficulty_data['analysis']
+            except Exception as e:
+                logger.error(f"Error calculating difficulty for question {i}: {e}")
+                q['difficulty'] = 50
+                q['difficulty_level'] = "Medium"
+                q['competing_pages'] = 0
+                q['difficulty_analysis'] = "Unable to calculate"
+        
+        # For remaining questions (6-10), assign estimated difficulty
+        for i, q in enumerate(questions[5:], start=5):
+            # Use search volume as proxy for difficulty
+            if q.get('search_volume') == 'high':
+                q['difficulty'] = 70
+                q['difficulty_level'] = "High"
+            elif q.get('search_volume') == 'medium':
+                q['difficulty'] = 50
+                q['difficulty_level'] = "Medium"
+            else:
+                q['difficulty'] = 30
+                q['difficulty_level'] = "Low"
+            q['competing_pages'] = 0
+            q['difficulty_analysis'] = "Estimated based on search volume"
+        
+        logger.info(f"Discovered {len(questions)} questions with difficulty analysis")
         return questions
         
     except Exception as e:
