@@ -9,6 +9,7 @@ import Contact from '@/pages/Contact';
 import Logout from '@/pages/Logout';
 import Dashboard from '@/components/Dashboard';
 import ContentManagement from '@/components/ContentManagement';
+import ContentDetail from '@/components/ContentDetail';
 import KeywordMonitoring from '@/components/KeywordMonitoring';
 import Recommendations from '@/components/Recommendations';
 import CompetitorAnalysis from '@/components/CompetitorAnalysis';
