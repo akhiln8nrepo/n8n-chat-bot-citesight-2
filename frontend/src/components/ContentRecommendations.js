@@ -220,12 +220,14 @@ const ContentRecommendations = ({ contentId, onApply, onViewUpdated }) => {
               <button
                 onClick={() => {
                   setShowOptimizedModal(false);
-                  window.location.reload();
+                  if (onViewUpdated) {
+                    onViewUpdated();
+                  }
                 }}
                 className="btn-primary flex-1"
               >
-                <ExternalLink size={18} className="mr-2" />
-                Refresh to See Changes
+                <CheckCircle2 size={18} className="mr-2" />
+                View Updated Content
               </button>
               <button
                 onClick={() => setShowOptimizedModal(false)}
