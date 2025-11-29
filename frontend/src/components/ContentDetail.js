@@ -243,29 +243,28 @@ const ContentDetail = () => {
 
           {activeTab === 'keyword-analysis' && (
             <div>
-              {!keyword && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-                  <p className="text-yellow-800">
-                    No keyword associated with this content. Please add a keyword first.
+              {keywords.length === 0 ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                  <p className="text-yellow-800 mb-4">
+                    No keywords added yet. Please add a keyword first to analyze.
                   </p>
-                  <input
-                    type="text"
-                    placeholder="Enter keyword (e.g., Treadmill)"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    className="form-input mt-3"
-                  />
+                  <button
+                    onClick={() => setShowAddKeyword(true)}
+                    className="btn-primary"
+                  >
+                    Add Your First Keyword
+                  </button>
                 </div>
-              )}
-              {keyword && (
-                <KeywordAnalysis
-                  keyword={keyword}
-                  contentId={contentId}
-                  onAnalysisComplete={handleAnalysisComplete}
-                />
-              )}
-            </div>
-          )}
+              ) : (
+                <div className="space-y-6">
+                  {/* Keyword Selector */}
+                  <div className="bg-white rounded-xl p-6 border border-slate-200">
+                    <label className="form-label">Select Keyword to Analyze</label>
+                    <select
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      className="form-input"
+                    >\n                      {keywords.map((kw) => (\n                        <option key={kw.id} value={kw.keyword}>\n                          {kw.keyword}\n                        </option>\n                      ))}\n                    </select>\n                  </div>\n\n                  {keyword && (\n                    <KeywordAnalysis\n                      keyword={keyword}\n                      contentId={contentId}\n                      onAnalysisComplete={handleAnalysisComplete}\n                    />\n                  )}\n                </div>\n              )}\n            </div>\n          )}
 
           {activeTab === 'recommendations' && (
             <ContentRecommendations
