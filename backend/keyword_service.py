@@ -210,9 +210,9 @@ search_volume must be: high, medium, or low"""
             # Generate trend data
             q['trend_data'] = generate_search_trend_data()
         
-        # Calculate difficulty for each question (for first 5 to save API calls)
-        logger.info(f"Calculating keyword difficulty for top 5 questions...")
-        for i, q in enumerate(questions[:5]):
+        # Calculate difficulty for each question (for first 10 to save API calls)
+        logger.info(f"Calculating keyword difficulty for top 10 questions...")
+        for i, q in enumerate(questions[:10]):
             try:
                 difficulty_data = await calculate_keyword_difficulty(q['question'])
                 q['difficulty'] = difficulty_data['difficulty']
