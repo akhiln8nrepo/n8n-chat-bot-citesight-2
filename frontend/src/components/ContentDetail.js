@@ -40,37 +40,55 @@ const ContentDetail = () => {
 
   const fetchContentDetail = async () => {
     try {
+      console.log('Fetching content for ID:', contentId);
       const response = await axios.get(`/content/${contentId}`);
       setContent(response.data);
+      console.log('Content fetched:', response.data.title);
       
       // Get keywords for this specific content
       try {
-        // Try the specific endpoint first
+        console.log('Fetching keywords for content_id:', contentId);
         const keywordRes = await axios.get(`/keywords/${contentId}`);
-        setKeywords(keywordRes.data);
-        if (keywordRes.data.length > 0) {
-          setKeyword(keywordRes.data[0].keyword);
+        console.log('Keywords API response:', keywordRes.data);
+        
+        if (keywordRes.data && Array.isArray(keywordRes.data)) {
+          setKeywords(keywordRes.data);
+          console.log('✅ Keywords set:', keywordRes.data.length, 'keyword(s)');
+          
+          if (keywordRes.data.length > 0) {
+            setKeyword(keywordRes.data[0].keyword);
+            console.log('✅ Auto-selected keyword:', keywordRes.data[0].keyword);
+          }
+        } else {
+          console.warn('Invalid keywords response format');
+          setKeywords([]);
         }
-        console.log('Keywords fetched:', keywordRes.data.length);
       } catch (error) {
-        console.error('Error fetching keywords:', error);
+        console.error('❌ Error fetching keywords:', error.response?.status, error.message);
+        
         // Try fallback to get all keywords
         try {
+          console.log('Trying fallback - fetch all keywords');
           const allKeywordsRes = await axios.get(`/keywords`);
+          console.log('All keywords fetched:', allKeywordsRes.data.length);
+          
           const contentKeywords = allKeywordsRes.data.filter(k => k.content_id === contentId);
+          console.log('Filtered keywords for this content:', contentKeywords.length);
+          
           setKeywords(contentKeywords);
           if (contentKeywords.length > 0) {
             setKeyword(contentKeywords[0].keyword);
+            console.log('✅ Auto-selected keyword (fallback):', contentKeywords[0].keyword);
           }
-          console.log('Keywords fetched (fallback):', contentKeywords.length);
         } catch (fallbackError) {
-          console.error('Error fetching keywords (fallback):', fallbackError);
+          console.error('❌ Fallback also failed:', fallbackError);
+          setKeywords([]);
         }
       }
       
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching content:', error);
+      console.error('❌ Error fetching content:', error);
       toast.error('Failed to load content');
       setLoading(false);
     }
