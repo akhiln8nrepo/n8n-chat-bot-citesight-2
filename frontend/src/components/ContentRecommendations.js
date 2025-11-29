@@ -3,7 +3,7 @@ import axios from '@/utils/axios';
 import { Sparkles, CheckCircle2, Loader2, Layout, FileText, X, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
-const ContentRecommendations = ({ contentId, onApply }) => {
+const ContentRecommendations = ({ contentId, onApply, onViewUpdated }) => {
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
