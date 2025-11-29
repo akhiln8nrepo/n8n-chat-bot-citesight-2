@@ -55,20 +55,28 @@ async def discover_llm_questions(keyword: str) -> List[Dict]:
     try:
         logger.info(f"Discovering LLM questions for keyword: {keyword}")
         
-        prompt = f"""List 10 of the most commonly asked questions that users search for related to the keyword "{keyword}". 
-        
-Focus on:
-- Purchase intent questions (e.g., "best {keyword}", "how to choose {keyword}")
-- Problem-solving questions (e.g., "how to fix {keyword}", "{keyword} not working")
-- Comparison questions (e.g., "{keyword} vs", "which {keyword}")
-- Information-seeking questions (e.g., "what is {keyword}", "how does {keyword} work")
+        prompt = f"""Generate 10 commonly asked questions about "{keyword}".
 
-Return as a JSON array of objects with 'question' and 'search_volume' (estimated: high/medium/low) fields."""
+Return a JSON object with this exact format:
+{{
+  "questions": [
+    {{"question": "What is the best {keyword}?", "search_volume": "high"}},
+    {{"question": "How to choose {keyword}?", "search_volume": "medium"}}
+  ]
+}}
+
+Focus on:
+- Purchase intent: "best {keyword}", "top {keyword}", "{keyword} buying guide"
+- Problem-solving: "how to fix {keyword}", "{keyword} troubleshooting"
+- Comparisons: "{keyword} vs alternative", "which {keyword}"
+- Information: "what is {keyword}", "how does {keyword} work"
+
+search_volume must be: high, medium, or low"""
 
         response = openrouter_client.chat.completions.create(
             model="openai/gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a keyword research expert. Return ONLY valid JSON array, no markdown, no explanations."},
+                {"role": "system", "content": "You are a keyword research expert. Return valid JSON with questions array."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
@@ -82,6 +90,8 @@ Return as a JSON array of objects with 'question' and 'search_volume' (estimated
         import json
         import re
         
+        logger.info(f"OpenRouter response: {content[:200]}...")
+        
         # Try to extract JSON from markdown code blocks if present
         if "```json" in content:
             content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
@@ -91,13 +101,35 @@ Return as a JSON array of objects with 'question' and 'search_volume' (estimated
         # Parse the JSON
         data = json.loads(content.strip())
         
-        # Handle if wrapped in object with 'questions' key
-        if isinstance(data, dict) and 'questions' in data:
-            questions = data['questions']
+        # Handle different response formats
+        if isinstance(data, dict):
+            # Try common keys
+            if 'questions' in data:
+                questions = data['questions']
+            elif 'data' in data:
+                questions = data['data']
+            elif 'items' in data:
+                questions = data['items']
+            elif 'results' in data:
+                questions = data['results']
+            else:
+                # If dict doesn't have expected keys, might be a single level with question keys
+                questions = []
         elif isinstance(data, list):
             questions = data
         else:
             questions = []
+        
+        # Validate questions format
+        if questions and len(questions) > 0:
+            # Ensure each question has required fields
+            validated_questions = []
+            for q in questions:
+                if isinstance(q, dict) and 'question' in q:
+                    if 'search_volume' not in q:
+                        q['search_volume'] = 'medium'
+                    validated_questions.append(q)
+            questions = validated_questions
         
         logger.info(f"Discovered {len(questions)} questions for keyword: {keyword}")
         return questions
