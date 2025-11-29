@@ -257,7 +257,22 @@ search_volume must be: high, medium, or low"""
             {"question": f"Best budget {keyword}", "search_volume": "high", "difficulty": 65, "difficulty_level": "High", "competing_pages": 9, "difficulty_analysis": "High competition", "intent": "C"},
             {"question": f"{keyword} pros and cons", "search_volume": "low", "difficulty": 40, "difficulty_level": "Low", "competing_pages": 5, "difficulty_analysis": "Low competition", "intent": "I"},
             {"question": f"How to use {keyword}", "search_volume": "medium", "difficulty": 50, "difficulty_level": "Medium", "competing_pages": 7, "difficulty_analysis": "Moderate competition", "intent": "I"},
-            {"question": f"{keyword} reviews and ratings", "search_volume": "high", "difficulty": 80, "difficulty_level": "High", "competing_pages": 10, "difficulty_analysis": "Very high competition", "intent": "C"}
+            {"question": f"{keyword} reviews and ratings", "search_volume": "high", "difficulty": 80, "difficulty_level": "High", "competing_pages": 10, "difficulty_analysis": "Very high competition", "intent": "C"},
+            {"question": f"{keyword} vs alternatives", "search_volume": "medium", "difficulty": 60, "difficulty_level": "Medium", "competing_pages": 8, "difficulty_analysis": "Moderate competition", "intent": "C"},
+            {"question": f"Why choose {keyword}?", "search_volume": "low", "difficulty": 30, "difficulty_level": "Low", "competing_pages": 4, "difficulty_analysis": "Low competition", "intent": "I"},
+            {"question": f"How to get started with {keyword}", "search_volume": "medium", "difficulty": 45, "difficulty_level": "Medium", "competing_pages": 6, "difficulty_analysis": "Moderate competition", "intent": "I"},
+            {"question": f"{keyword} features and benefits", "search_volume": "medium", "difficulty": 50, "difficulty_level": "Medium", "competing_pages": 7, "difficulty_analysis": "Moderate competition", "intent": "I"},
+            {"question": f"Is {keyword} worth it?", "search_volume": "high", "difficulty": 65, "difficulty_level": "High", "competing_pages": 9, "difficulty_analysis": "High competition", "intent": "C"},
+            {"question": f"{keyword} pricing and costs", "search_volume": "high", "difficulty": 70, "difficulty_level": "High", "competing_pages": 9, "difficulty_analysis": "High competition", "intent": "C"},
+            {"question": f"Where to buy {keyword}", "search_volume": "medium", "difficulty": 55, "difficulty_level": "Medium", "competing_pages": 7, "difficulty_analysis": "Moderate competition", "intent": "T"},
+            {"question": f"{keyword} alternatives and competitors", "search_volume": "medium", "difficulty": 60, "difficulty_level": "Medium", "competing_pages": 8, "difficulty_analysis": "Moderate competition", "intent": "C"},
+            {"question": f"Common {keyword} problems", "search_volume": "low", "difficulty": 40, "difficulty_level": "Low", "competing_pages": 5, "difficulty_analysis": "Low competition", "intent": "I"},
+            {"question": f"{keyword} tips and tricks", "search_volume": "medium", "difficulty": 45, "difficulty_level": "Medium", "competing_pages": 6, "difficulty_analysis": "Moderate competition", "intent": "I"},
+            {"question": f"Advanced {keyword} techniques", "search_volume": "low", "difficulty": 35, "difficulty_level": "Low", "competing_pages": 4, "difficulty_analysis": "Low competition", "intent": "I"},
+            {"question": f"{keyword} best practices", "search_volume": "medium", "difficulty": 50, "difficulty_level": "Medium", "competing_pages": 7, "difficulty_analysis": "Moderate competition", "intent": "I"},
+            {"question": f"How to troubleshoot {keyword}", "search_volume": "low", "difficulty": 30, "difficulty_level": "Low", "competing_pages": 4, "difficulty_analysis": "Low competition", "intent": "I"},
+            {"question": f"{keyword} case studies", "search_volume": "low", "difficulty": 35, "difficulty_level": "Low", "competing_pages": 5, "difficulty_analysis": "Low competition", "intent": "I"},
+            {"question": f"Future of {keyword}", "search_volume": "low", "difficulty": 25, "difficulty_level": "Low", "competing_pages": 3, "difficulty_analysis": "Very low competition", "intent": "I"}
         ]
         
         # Add trend data to fallback questions
