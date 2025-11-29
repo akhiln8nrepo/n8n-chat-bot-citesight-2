@@ -185,14 +185,23 @@ const ContentManagement = () => {
                       {new Date(item.created_at).toLocaleDateString()}
                     </td>
                     <td>
-                      <button
-                        data-testid={`view-visibility-${item.id}`}
-                        onClick={() => viewVisibility(item.id)}
-                        className="flex items-center gap-2 text-sky-600 hover:text-sky-700 font-medium text-sm"
-                      >
-                        <Eye size={16} />
-                        View Visibility
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          data-testid={`view-visibility-${item.id}`}
+                          onClick={() => viewVisibility(item.id)}
+                          className="flex items-center gap-2 text-sky-600 hover:text-sky-700 font-medium text-sm"
+                        >
+                          <Eye size={16} />
+                          Visibility
+                        </button>
+                        <button
+                          onClick={() => navigate(`/content/${item.id}`)}
+                          className="flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium text-sm"
+                        >
+                          <Sparkles size={16} />
+                          Optimize
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
