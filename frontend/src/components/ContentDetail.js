@@ -295,6 +295,7 @@ const ContentDetail = () => {
             <ContentRecommendations
               contentId={contentId}
               onApply={handleRecommendationsApplied}
+              onViewUpdated={handleViewUpdated}
             />
           )}
         </div>
