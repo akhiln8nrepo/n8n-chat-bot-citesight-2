@@ -12,8 +12,11 @@ const ContentDetail = () => {
   const navigate = useNavigate();
   const [content, setContent] = useState(null);
   const [keyword, setKeyword] = useState('');
+  const [keywords, setKeywords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showAddKeyword, setShowAddKeyword] = useState(false);
+  const [newKeyword, setNewKeyword] = useState('');
 
   useEffect(() => {
     fetchContentDetail();
