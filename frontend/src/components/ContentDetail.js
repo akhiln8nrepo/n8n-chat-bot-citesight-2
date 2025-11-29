@@ -53,10 +53,10 @@ const ContentDetail = () => {
 
   if (loading) {
     return (
-      <div className=\"dashboard-container\">
+      <div className="dashboard-container">
         <Navigation />
-        <div className=\"flex items-center justify-center h-screen\">
-          <Loader2 size={48} className=\"animate-spin text-blue-600\" />
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 size={48} className="animate-spin text-blue-600" />
         </div>
       </div>
     );
@@ -64,12 +64,12 @@ const ContentDetail = () => {
 
   if (!content) {
     return (
-      <div className=\"dashboard-container\">
+      <div className="dashboard-container">
         <Navigation />
-        <div className=\"max-w-7xl mx-auto px-6 py-8\">
-          <div className=\"text-center\">
-            <h2 className=\"text-2xl font-bold text-slate-900 mb-4\">Content Not Found</h2>
-            <button onClick={() => navigate('/content')} className=\"btn-primary\">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Content Not Found</h2>
+            <button onClick={() => navigate('/content')} className="btn-primary">
               Back to Content
             </button>
           </div>
@@ -79,37 +79,37 @@ const ContentDetail = () => {
   }
 
   return (
-    <div className=\"dashboard-container\">
+    <div className="dashboard-container">
       <Navigation />
 
-      <div className=\"max-w-7xl mx-auto px-6 py-8\">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className=\"mb-6\">
+        <div className="mb-6">
           <button
             onClick={() => navigate('/content')}
-            className=\"flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4\"
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
           >
             <ArrowLeft size={20} />
             Back to Content
           </button>
           
-          <div className=\"bg-white rounded-xl p-6 border border-slate-200\">
-            <div className=\"flex items-start gap-4\">
-              <div className=\"w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0\">
-                <FileText size={24} className=\"text-blue-600\" />
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText size={24} className="text-blue-600" />
               </div>
-              <div className=\"flex-1\">
-                <h1 className=\"text-2xl font-bold text-slate-900 mb-2\">{content.title}</h1>
-                <div className=\"flex items-center gap-4 text-sm text-slate-600\">
-                  <div className=\"flex items-center gap-1\">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-slate-900 mb-2">{content.title}</h1>
+                <div className="flex items-center gap-4 text-sm text-slate-600">
+                  <div className="flex items-center gap-1">
                     <Calendar size={16} />
                     {new Date(content.created_at).toLocaleDateString()}
                   </div>
                   <a
                     href={content.url}
-                    target=\"_blank\"
-                    rel=\"noopener noreferrer\"
-                    className=\"flex items-center gap-1 text-blue-600 hover:text-blue-700\"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
                   >
                     <ExternalLink size={16} />
                     View Live
@@ -121,23 +121,35 @@ const ContentDetail = () => {
         </div>
 
         {/* Tabs */}
-        <div className=\"bg-white rounded-xl border border-slate-200 mb-6\">
-          <div className=\"flex border-b border-slate-200\">
+        <div className="bg-white rounded-xl border border-slate-200 mb-6">
+          <div className="flex border-b border-slate-200">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-6 py-3 font-medium transition-colors ${\n                activeTab === 'overview'\n                  ? 'text-blue-600 border-b-2 border-blue-600'\n                  : 'text-slate-600 hover:text-slate-900'\n              }`}
+              className={`px-6 py-3 font-medium transition-colors ${
+                activeTab === 'overview'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               Overview
             </button>
             <button
               onClick={() => setActiveTab('keyword-analysis')}
-              className={`px-6 py-3 font-medium transition-colors ${\n                activeTab === 'keyword-analysis'\n                  ? 'text-blue-600 border-b-2 border-blue-600'\n                  : 'text-slate-600 hover:text-slate-900'\n              }`}
+              className={`px-6 py-3 font-medium transition-colors ${
+                activeTab === 'keyword-analysis'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               Keyword Analysis
             </button>
             <button
               onClick={() => setActiveTab('recommendations')}
-              className={`px-6 py-3 font-medium transition-colors ${\n                activeTab === 'recommendations'\n                  ? 'text-blue-600 border-b-2 border-blue-600'\n                  : 'text-slate-600 hover:text-slate-900'\n              }`}
+              className={`px-6 py-3 font-medium transition-colors ${
+                activeTab === 'recommendations'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               Recommendations
             </button>
@@ -147,10 +159,10 @@ const ContentDetail = () => {
         {/* Tab Content */}
         <div>
           {activeTab === 'overview' && (
-            <div className=\"bg-white rounded-xl p-6 border border-slate-200\">
-              <h3 className=\"text-lg font-bold text-slate-900 mb-4\">Content Preview</h3>
-              <div className=\"prose max-w-none\">
-                <p className=\"text-slate-700 whitespace-pre-wrap\">{content.content_text}</p>
+            <div className="bg-white rounded-xl p-6 border border-slate-200">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Content Preview</h3>
+              <div className="prose max-w-none">
+                <p className="text-slate-700 whitespace-pre-wrap">{content.content_text}</p>
               </div>
             </div>
           )}
@@ -158,16 +170,16 @@ const ContentDetail = () => {
           {activeTab === 'keyword-analysis' && (
             <div>
               {!keyword && (
-                <div className=\"bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6\">
-                  <p className=\"text-yellow-800\">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+                  <p className="text-yellow-800">
                     No keyword associated with this content. Please add a keyword first.
                   </p>
                   <input
-                    type=\"text\"
-                    placeholder=\"Enter keyword (e.g., Treadmill)\"
+                    type="text"
+                    placeholder="Enter keyword (e.g., Treadmill)"
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
-                    className=\"form-input mt-3\"
+                    className="form-input mt-3"
                   />
                 </div>
               )}
