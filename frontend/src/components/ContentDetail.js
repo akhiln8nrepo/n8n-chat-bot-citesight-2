@@ -21,12 +21,15 @@ const ContentDetail = () => {
 
   useEffect(() => {
     fetchContentDetail();
+  }, [contentId]);
+
+  useEffect(() => {
     // Set tab from URL parameter
     const tabParam = searchParams.get('tab');
     if (tabParam) {
       setActiveTab(tabParam);
     }
-  }, [contentId, searchParams]);
+  }, [searchParams]);
 
   const fetchContentDetail = async () => {
     try {
