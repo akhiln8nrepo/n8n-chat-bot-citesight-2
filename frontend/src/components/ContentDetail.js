@@ -27,14 +27,16 @@ const ContentDetail = () => {
       const response = await axios.get(`/content/${contentId}`);
       setContent(response.data);
       
-      // Try to get associated keyword
+      // Get all associated keywords
       try {
-        const keywordRes = await axios.get(`/keywords/${contentId}`);
-        if (keywordRes.data && keywordRes.data.length > 0) {
-          setKeyword(keywordRes.data[0].keyword);
+        const keywordRes = await axios.get(`/keywords`);
+        const contentKeywords = keywordRes.data.filter(k => k.content_id === contentId);
+        setKeywords(contentKeywords);
+        if (contentKeywords.length > 0) {
+          setKeyword(contentKeywords[0].keyword);
         }
       } catch (error) {
-        // No keywords yet
+        console.error('Error fetching keywords:', error);
       }
       
       setLoading(false);
@@ -42,6 +44,39 @@ const ContentDetail = () => {
       console.error('Error fetching content:', error);
       toast.error('Failed to load content');
       setLoading(false);
+    }
+  };
+
+  const handleAddKeyword = async () => {
+    if (!newKeyword.trim()) {
+      toast.error('Please enter a keyword');
+      return;
+    }
+
+    try {
+      await axios.post('/keywords', {
+        content_id: contentId,
+        keyword: newKeyword.trim()
+      });
+      
+      toast.success('Keyword added successfully!');
+      setNewKeyword('');
+      setShowAddKeyword(false);
+      fetchContentDetail(); // Refresh to show new keyword
+    } catch (error) {
+      console.error('Error adding keyword:', error);
+      toast.error('Failed to add keyword');
+    }
+  };
+
+  const handleDeleteKeyword = async (keywordId) => {
+    try {
+      await axios.delete(`/keywords/${keywordId}`);
+      toast.success('Keyword removed');
+      fetchContentDetail(); // Refresh keywords list
+    } catch (error) {
+      console.error('Error deleting keyword:', error);
+      toast.error('Failed to delete keyword');
     }
   };
 
