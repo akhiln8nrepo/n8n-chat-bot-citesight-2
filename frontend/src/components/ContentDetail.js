@@ -269,6 +269,52 @@ const ContentDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Add Keyword Modal */}
+      {showAddKeyword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900">Add New Keyword</h3>
+              <button
+                onClick={() => setShowAddKeyword(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="form-label">Keyword</label>
+                <input
+                  type="text"
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  placeholder="e.g., Treadmill, Laptop, etc."
+                  className="form-input"
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddKeyword()}
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAddKeyword}
+                  className="btn-primary flex-1"
+                >
+                  Add Keyword
+                </button>
+                <button
+                  onClick={() => setShowAddKeyword(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
