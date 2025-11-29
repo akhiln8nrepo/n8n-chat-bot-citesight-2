@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '@/utils/axios';
-import { Lightbulb, AlertCircle } from 'lucide-react';
+import { Lightbulb, Sparkles, CheckCircle2, FileText, ExternalLink } from 'lucide-react';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
 const Recommendations = () => {
+  const navigate = useNavigate();
   const [content, setContent] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
+  const [optimizedContent, setOptimizedContent] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedContentId, setSelectedContentId] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -19,22 +17,15 @@ const Recommendations = () => {
 
   const fetchData = async () => {
     try {
-      const contentRes = await axios.get(`/content`);
-      setContent(contentRes.data);
+      const contentRes = await axios.get('/content');
+      const allContent = contentRes.data;
       
-      if (contentRes.data.length > 0) {
-        const allRecommendations = [];
-        for (const item of contentRes.data) {
-          try {
-            const recRes = await axios.get(`/recommendations/${item.id}`);
-            allRecommendations.push(...recRes.data);
-          } catch (error) {
-            console.error(`Error fetching recommendations for content ${item.id}:`, error);
-          }
-        }
-        setRecommendations(allRecommendations);
-      }
+      // Separate optimized vs unoptimized content
+      const optimized = allContent.filter(c => c.optimized === true);
+      const unoptimized = allContent.filter(c => c.optimized !== true);
       
+      setOptimizedContent(optimized);
+      setContent(unoptimized);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -43,159 +34,173 @@ const Recommendations = () => {
     }
   };
 
-  const filterRecommendationsByContent = (contentId) => {
-    if (!contentId) return recommendations;
-    return recommendations.filter(r => r.content_id === contentId);
-  };
-
-  const filteredRecommendations = filterRecommendationsByContent(selectedContentId);
-
-  const groupedByPriority = {
-    high: filteredRecommendations.filter(r => r.priority === 'high'),
-    medium: filteredRecommendations.filter(r => r.priority === 'medium'),
-    low: filteredRecommendations.filter(r => r.priority === 'low')
+  const handleOptimize = (contentId) => {
+    navigate(`/content/${contentId}?tab=recommendations`);
   };
 
   if (loading) {
     return (
       <div className="dashboard-container">
         <Navigation />
-        <div className="flex items-center justify-center h-screen">
-          <div className="spinner" data-testid="loading-spinner"></div>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600">Loading recommendations...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container" data-testid="recommendations-page">
+    <div className="dashboard-container">
       <Navigation />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">GEO Recommendations</h1>
-          <p className="text-base text-slate-600">AI-powered optimization tips to improve your content visibility</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">AI Content Recommendations</h1>
+          <p className="text-slate-600">Optimize your content for better AI visibility with expert recommendations</p>
         </div>
 
-        {/* Filter */}
-        <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200">
-          <label className="form-label">Filter by Content</label>
-          <select
-            data-testid="content-filter"
-            className="form-input"
-            value={selectedContentId}
-            onChange={(e) => setSelectedContentId(e.target.value)}
-          >
-            <option value="">All Content</option>
-            {content.map((item) => (
-              <option key={item.id} value={item.id}>{item.title}</option>
-            ))}
-          </select>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-slate-600">Total Content</div>
+              <FileText size={20} className="text-blue-600" />
+            </div>
+            <div className="text-3xl font-bold text-slate-900">{content.length + optimizedContent.length}</div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-slate-600">Optimized</div>
+              <CheckCircle2 size={20} className="text-green-600" />
+            </div>
+            <div className="text-3xl font-bold text-slate-900">{optimizedContent.length}</div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-slate-600">Needs Optimization</div>
+              <Sparkles size={20} className="text-orange-600" />
+            </div>
+            <div className="text-3xl font-bold text-slate-900">{content.length}</div>
+          </div>
         </div>
 
-        {filteredRecommendations.length === 0 ? (
+        {/* Needs Optimization Section */}
+        {content.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Content Needing Optimization</h2>
+            <div className="space-y-4">
+              {content.map((item) => (
+                <div key={item.id} className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
+                        <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
+                          Not Optimized
+                        </span>
+                      </div>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 mb-2"
+                      >
+                        <ExternalLink size={14} />
+                        {item.url}
+                      </a>
+                      <p className="text-sm text-slate-600 line-clamp-2">{item.content_text}</p>
+                    </div>
+                    <button
+                      onClick={() => handleOptimize(item.id)}
+                      className="ml-4 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all"
+                    >
+                      <Sparkles size={18} />
+                      Get Recommendations
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Optimized Content Section */}
+        {optimizedContent.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Optimized Content</h2>
+            <div className="space-y-4">
+              {optimizedContent.map((item) => (
+                <div key={item.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 size={20} className="text-green-600" />
+                        <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
+                          Optimized
+                        </span>
+                      </div>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 mb-2"
+                      >
+                        <ExternalLink size={14} />
+                        {item.url}
+                      </a>
+                      {item.optimization_date && (
+                        <div className="text-sm text-slate-600">
+                          Optimized on {new Date(item.optimization_date).toLocaleDateString()}
+                        </div>
+                      )}
+                      {item.changes_applied && item.changes_applied.length > 0 && (
+                        <div className="mt-2">
+                          <div className="text-xs text-slate-600 mb-1">Changes Applied:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {item.changes_applied.slice(0, 3).map((change, idx) => (
+                              <span key={idx} className="text-xs bg-white text-slate-700 px-2 py-1 rounded">
+                                {change}
+                              </span>
+                            ))}
+                            {item.changes_applied.length > 3 && (
+                              <span className="text-xs text-slate-500">+{item.changes_applied.length - 3} more</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => navigate(`/content/${item.id}`)}
+                      className="ml-4 flex items-center gap-2 bg-white text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 border border-slate-200 transition-all"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {content.length === 0 && optimizedContent.length === 0 && (
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
-            <Lightbulb size={64} className="mx-auto mb-4 text-slate-300" />
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No Recommendations Yet</h3>
-            <p className="text-slate-600 mb-6">
-              Add content to receive AI-powered GEO recommendations for optimization.
-            </p>
+            <Lightbulb size={48} className="mx-auto text-slate-300 mb-4" />
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No Content Yet</h3>
+            <p className="text-slate-600 mb-6">Add content to start getting AI-powered optimization recommendations</p>
             <button
-              data-testid="go-to-content-btn"
-              onClick={() => window.location.href = '/content'}
+              onClick={() => navigate('/content')}
               className="btn-primary"
             >
-              Add Content
+              Add Your First Content
             </button>
-          </div>
-        ) : (
-          <div className="space-y-8" data-testid="recommendations-list">
-            {/* High Priority */}
-            {groupedByPriority.high.length > 0 && (
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <AlertCircle size={24} className="text-red-600" />
-                  <h2 className="text-2xl font-bold text-slate-900">High Priority</h2>
-                </div>
-                <div className="space-y-3">
-                  {groupedByPriority.high.map((rec, index) => {
-                    const contentItem = content.find(c => c.id === rec.content_id);
-                    return (
-                      <div
-                        key={index}
-                        className="recommendation-card priority-high"
-                        data-testid={`recommendation-high-${index}`}
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <span className="priority-badge high">HIGH PRIORITY</span>
-                          <span className="text-xs text-slate-500">{contentItem?.title || 'Unknown'}</span>
-                        </div>
-                        <h3 className="font-bold text-slate-900 mb-2">{rec.recommendation_type}</h3>
-                        <p className="text-sm text-slate-700 leading-relaxed">{rec.recommendation_text}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Medium Priority */}
-            {groupedByPriority.medium.length > 0 && (
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <Lightbulb size={24} className="text-yellow-600" />
-                  <h2 className="text-2xl font-bold text-slate-900">Medium Priority</h2>
-                </div>
-                <div className="space-y-3">
-                  {groupedByPriority.medium.map((rec, index) => {
-                    const contentItem = content.find(c => c.id === rec.content_id);
-                    return (
-                      <div
-                        key={index}
-                        className="recommendation-card priority-medium"
-                        data-testid={`recommendation-medium-${index}`}
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <span className="priority-badge medium">MEDIUM PRIORITY</span>
-                          <span className="text-xs text-slate-500">{contentItem?.title || 'Unknown'}</span>
-                        </div>
-                        <h3 className="font-bold text-slate-900 mb-2">{rec.recommendation_type}</h3>
-                        <p className="text-sm text-slate-700 leading-relaxed">{rec.recommendation_text}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Low Priority */}
-            {groupedByPriority.low.length > 0 && (
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <Lightbulb size={24} className="text-green-600" />
-                  <h2 className="text-2xl font-bold text-slate-900">Low Priority</h2>
-                </div>
-                <div className="space-y-3">
-                  {groupedByPriority.low.map((rec, index) => {
-                    const contentItem = content.find(c => c.id === rec.content_id);
-                    return (
-                      <div
-                        key={index}
-                        className="recommendation-card priority-low"
-                        data-testid={`recommendation-low-${index}`}
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <span className="priority-badge low">LOW PRIORITY</span>
-                          <span className="text-xs text-slate-500">{contentItem?.title || 'Unknown'}</span>
-                        </div>
-                        <h3 className="font-bold text-slate-900 mb-2">{rec.recommendation_type}</h3>
-                        <p className="text-sm text-slate-700 leading-relaxed">{rec.recommendation_text}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
