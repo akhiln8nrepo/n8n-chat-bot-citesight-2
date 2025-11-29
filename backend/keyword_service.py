@@ -68,18 +68,36 @@ Return as a JSON array of objects with 'question' and 'search_volume' (estimated
         response = openrouter_client.chat.completions.create(
             model="openai/gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a keyword research expert. Return valid JSON only."},
+                {"role": "system", "content": "You are a keyword research expert. Return ONLY valid JSON array, no markdown, no explanations."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=1000
+            max_tokens=1000,
+            response_format={"type": "json_object"}
         )
         
         content = response.choices[0].message.content
         
         # Parse JSON response
         import json
-        questions = json.loads(content)
+        import re
+        
+        # Try to extract JSON from markdown code blocks if present
+        if "```json" in content:
+            content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
+        elif "```" in content:
+            content = re.search(r'```\s*(.*?)\s*```', content, re.DOTALL).group(1)
+        
+        # Parse the JSON
+        data = json.loads(content.strip())
+        
+        # Handle if wrapped in object with 'questions' key
+        if isinstance(data, dict) and 'questions' in data:
+            questions = data['questions']
+        elif isinstance(data, list):
+            questions = data
+        else:
+            questions = []
         
         logger.info(f"Discovered {len(questions)} questions for keyword: {keyword}")
         return questions
