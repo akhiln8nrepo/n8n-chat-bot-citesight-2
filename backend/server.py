@@ -694,6 +694,22 @@ async def create_keyword(input: KeywordCreate):
     await db.keywords.insert_one(doc)
     return keyword
 
+@api_router.get("/keywords", response_model=List[Keyword])
+async def get_all_keywords(auth_header: str = Header(None, alias="Authorization")):
+    """Get all keywords for the authenticated user"""
+    user_id = await get_current_user_from_token(auth_header)
+    
+    # Get all content for this user first
+    user_content = await db.content.find({"user_id": user_id}, {"_id": 0, "id": 1}).to_list(1000)
+    content_ids = [c['id'] for c in user_content]
+    
+    # Get keywords for user's content
+    keywords = await db.keywords.find({"content_id": {"$in": content_ids}}, {"_id": 0}).to_list(1000)
+    for k in keywords:
+        if isinstance(k['created_at'], str):
+            k['created_at'] = datetime.fromisoformat(k['created_at'])
+    return keywords
+
 @api_router.get("/keywords/{content_id}", response_model=List[Keyword])
 async def get_keywords(content_id: str):
     keywords = await db.keywords.find({"content_id": content_id}, {"_id": 0}).to_list(100)
@@ -701,6 +717,14 @@ async def get_keywords(content_id: str):
         if isinstance(k['created_at'], str):
             k['created_at'] = datetime.fromisoformat(k['created_at'])
     return keywords
+
+@api_router.delete("/keywords/{keyword_id}")
+async def delete_keyword(keyword_id: str):
+    """Delete a keyword"""
+    result = await db.keywords.delete_one({"id": keyword_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Keyword not found")
+    return {"message": "Keyword deleted successfully"}
 
 # Recommendations routes
 @api_router.get("/recommendations/{content_id}", response_model=List[GEORecommendation])
