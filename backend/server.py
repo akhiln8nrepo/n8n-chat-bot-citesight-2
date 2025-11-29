@@ -877,6 +877,216 @@ async def chatbot_webhook_proxy(data: ChatbotMessage):
         logger.error(f"Error forwarding to webhook: {str(e)}")
         return {"reply": "Thank you for your message! Our team will get back to you soon."}
 
+# ==================== KEYWORD ANALYSIS & RECOMMENDATIONS ====================
+
+from keyword_service import (
+    discover_llm_questions,
+    search_most_searched_queries,
+    analyze_content_coverage,
+    discover_competitors
+)
+from templates_service import get_all_templates, get_template
+from recommendations_service import (
+    generate_comprehensive_recommendations,
+    apply_recommendations,
+    generate_model_specific_recommendations
+)
+
+class KeywordAnalysisRequest(BaseModel):
+    keyword: str
+    content_id: Optional[str] = None
+
+class ContentRecommendationRequest(BaseModel):
+    content_id: str
+    template_id: str = "base"
+
+class ApplyRecommendationsRequest(BaseModel):
+    content_id: str
+    recommendations: Dict
+
+@api_router.post("/keyword-analysis")
+async def analyze_keyword(request: KeywordAnalysisRequest):
+    """
+    Analyze a keyword: discover LLM questions, search queries, and evaluate content coverage
+    """
+    try:
+        keyword = request.keyword
+        
+        # Discover LLM questions
+        llm_questions = await discover_llm_questions(keyword)
+        
+        # Search most-searched queries
+        search_queries = await search_most_searched_queries(keyword)
+        
+        result = {
+            "keyword": keyword,
+            "llm_questions": llm_questions,
+            "search_queries": search_queries,
+            "analysis_timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # If content_id provided, analyze coverage
+        if request.content_id:
+            content = await db.content.find_one({"id": request.content_id}, {"_id": 0})
+            if content:
+                coverage_analysis = await analyze_content_coverage(
+                    keyword,
+                    content['content_text'],
+                    llm_questions
+                )
+                result['coverage_analysis'] = coverage_analysis
+        
+        # Store in database
+        analysis_doc = result.copy()
+        analysis_doc['id'] = str(uuid.uuid4())
+        analysis_doc['content_id'] = request.content_id
+        await db.keyword_analysis.insert_one(analysis_doc)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in keyword analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/templates")
+async def get_templates():
+    """Get all available optimization templates"""
+    return get_all_templates()
+
+@api_router.get("/templates/{template_id}")
+async def get_template_by_id(template_id: str):
+    """Get a specific template by ID"""
+    template = get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template
+
+@api_router.post("/content/{content_id}/recommendations")
+async def generate_recommendations(content_id: str, template_id: str = "base"):
+    """
+    Generate comprehensive recommendations for content
+    """
+    try:
+        # Get content
+        content = await db.content.find_one({"id": content_id}, {"_id": 0})
+        if not content:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        # Get keyword analysis if exists
+        keyword_analysis = await db.keyword_analysis.find_one(
+            {"content_id": content_id},
+            {"_id": 0},
+            sort=[("analysis_timestamp", -1)]
+        )
+        
+        # Extract keyword (use first keyword or derive from title)
+        keyword_doc = await db.keywords.find_one({"content_id": content_id}, {"_id": 0})
+        keyword = keyword_doc.get('keyword') if keyword_doc else content['title'].split()[0]
+        
+        # Generate recommendations
+        recommendations = await generate_comprehensive_recommendations(
+            content_text=content['content_text'],
+            title=content['title'],
+            keyword=keyword,
+            template_id=template_id,
+            keyword_analysis=keyword_analysis.get('coverage_analysis') if keyword_analysis else None
+        )
+        
+        # Store recommendations
+        rec_doc = {
+            "id": str(uuid.uuid4()),
+            "content_id": content_id,
+            "template_id": template_id,
+            "recommendations": recommendations,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.content_recommendations.insert_one(rec_doc)
+        
+        return recommendations
+        
+    except Exception as e:
+        logger.error(f"Error generating recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/content/{content_id}/apply-recommendations")
+async def apply_content_recommendations(content_id: str, request: ApplyRecommendationsRequest):
+    """
+    Apply recommendations to content automatically
+    """
+    try:
+        # Get current content
+        content = await db.content.find_one({"id": content_id}, {"_id": 0})
+        if not content:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        # Apply recommendations
+        optimized = await apply_recommendations(
+            content_text=content['content_text'],
+            title=content['title'],
+            recommendations=request.recommendations
+        )
+        
+        # Update content in database
+        await db.content.update_one(
+            {"id": content_id},
+            {"$set": {
+                "title": optimized['optimized_title'],
+                "content_text": optimized['optimized_content'],
+                "optimized": True,
+                "optimization_date": datetime.now(timezone.utc).isoformat(),
+                "changes_applied": optimized['changes_summary']
+            }}
+        )
+        
+        return {
+            "message": "Recommendations applied successfully",
+            "optimized_title": optimized['optimized_title'],
+            "changes_summary": optimized['changes_summary']
+        }
+        
+    except Exception as e:
+        logger.error(f"Error applying recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/content/{content_id}/model-recommendations")
+async def get_model_specific_recommendations(content_id: str, model_id: str = "chatgpt"):
+    """
+    Generate model-specific recommendations
+    """
+    try:
+        content = await db.content.find_one({"id": content_id}, {"_id": 0})
+        if not content:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        keyword_doc = await db.keywords.find_one({"content_id": content_id}, {"_id": 0})
+        keyword = keyword_doc.get('keyword') if keyword_doc else content['title'].split()[0]
+        
+        recommendations = await generate_model_specific_recommendations(
+            content_text=content['content_text'],
+            title=content['title'],
+            keyword=keyword,
+            model_id=model_id
+        )
+        
+        return recommendations
+        
+    except Exception as e:
+        logger.error(f"Error generating model recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/discover-competitors")
+async def find_competitors(keyword: str, title: str):
+    """
+    Discover competitors for a given keyword and title
+    """
+    try:
+        competitors = await discover_competitors(keyword, title)
+        return {"competitors": competitors}
+        
+    except Exception as e:
+        logger.error(f"Error discovering competitors: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the routers in the main app
 app.include_router(api_router)
 
