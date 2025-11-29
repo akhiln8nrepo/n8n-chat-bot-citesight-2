@@ -76,15 +76,24 @@ const ContentDetail = () => {
     }
 
     try {
-      await axios.post('/keywords', {
+      const response = await axios.post('/keywords', {
         content_id: contentId,
         keyword: newKeyword.trim()
       });
       
+      console.log('Keyword added:', response.data);
       toast.success('Keyword added successfully!');
+      
+      // Immediately add to local state
+      const newKw = response.data;
+      setKeywords([...keywords, newKw]);
+      setKeyword(newKw.keyword); // Auto-select the newly added keyword
+      
       setNewKeyword('');
       setShowAddKeyword(false);
-      fetchContentDetail(); // Refresh to show new keyword
+      
+      // Also refresh in background
+      setTimeout(() => fetchContentDetail(), 500);
     } catch (error) {
       console.error('Error adding keyword:', error);
       toast.error('Failed to add keyword');
