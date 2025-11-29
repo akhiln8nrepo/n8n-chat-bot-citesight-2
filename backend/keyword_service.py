@@ -118,7 +118,7 @@ async def discover_llm_questions(keyword: str) -> List[Dict]:
     try:
         logger.info(f"Discovering LLM questions for keyword: {keyword}")
         
-        prompt = f"""Generate 10 commonly asked questions about "{keyword}".
+        prompt = f"""Generate 25 commonly asked questions about "{keyword}".
 
 Return a JSON object with this exact format:
 {{
@@ -128,11 +128,14 @@ Return a JSON object with this exact format:
   ]
 }}
 
-Focus on:
+Focus on diverse question types:
 - Purchase intent: "best {keyword}", "top {keyword}", "{keyword} buying guide"
 - Problem-solving: "how to fix {keyword}", "{keyword} troubleshooting"
 - Comparisons: "{keyword} vs alternative", "which {keyword}"
 - Information: "what is {keyword}", "how does {keyword} work"
+- Reviews: "{keyword} reviews", "is {keyword} worth it"
+- Beginner: "{keyword} for beginners", "how to start with {keyword}"
+- Advanced: "advanced {keyword} techniques", "{keyword} best practices"
 
 search_volume must be: high, medium, or low"""
 
