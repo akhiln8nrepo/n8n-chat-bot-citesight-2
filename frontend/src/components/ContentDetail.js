@@ -274,17 +274,30 @@ const ContentDetail = () => {
 
           {activeTab === 'keyword-analysis' && (
             <div>
-              {keywords.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-8">
+                  <Loader2 size={48} className="animate-spin text-blue-600 mx-auto" />
+                  <p className="mt-4 text-slate-600">Loading keywords...</p>
+                </div>
+              ) : keywords.length === 0 ? (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
                   <p className="text-yellow-800 mb-4">
-                    No keywords added yet. Please add a keyword first to analyze.
+                    No keywords found for this content. Add a keyword to get started.
                   </p>
-                  <button
-                    onClick={() => setShowAddKeyword(true)}
-                    className="btn-primary"
-                  >
-                    Add Your First Keyword
-                  </button>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setShowAddKeyword(true)}
+                      className="btn-primary"
+                    >
+                      Add Your First Keyword
+                    </button>
+                    <button
+                      onClick={() => fetchContentDetail()}
+                      className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                    >
+                      Refresh Keywords
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-6">
