@@ -107,7 +107,9 @@ const KeywordAnalysis = ({ keyword, contentId, onAnalysisComplete }) => {
                   </div>
                   <div className="flex-1">
                     <p className="text-slate-900 font-medium mb-2">{item.question}</p>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    
+                    {/* First Row: Volume, Difficulty, Intent */}
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         item.search_volume === 'high' ? 'bg-red-100 text-red-700' :
                         item.search_volume === 'medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -125,14 +127,45 @@ const KeywordAnalysis = ({ keyword, contentId, onAnalysisComplete }) => {
                             {item.difficulty}% difficulty
                           </span>
                           <span className="text-xs text-slate-500">
-                            ({item.competing_pages || 0} competing pages)
+                            ({item.competing_pages || 0} pages)
                           </span>
                         </>
                       )}
+                      {item.intent && (
+                        <span className={`text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1 ${
+                          item.intent === 'T' ? 'bg-purple-100 text-purple-700' :
+                          item.intent === 'C' ? 'bg-blue-100 text-blue-700' :
+                          item.intent === 'N' ? 'bg-orange-100 text-orange-700' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {item.intent === 'T' && <ShoppingCart size={12} />}
+                          {item.intent === 'C' && <Search size={12} />}
+                          {item.intent === 'N' && <Navigation2 size={12} />}
+                          {item.intent === 'I' && <FileText size={12} />}
+                          {item.intent === 'T' ? 'Transactional' :
+                           item.intent === 'C' ? 'Commercial' :
+                           item.intent === 'N' ? 'Navigational' :
+                           'Informational'}
+                        </span>
+                      )}
                     </div>
-                    {item.difficulty_analysis && (
-                      <p className="text-xs text-slate-600 mt-2">{item.difficulty_analysis}</p>
-                    )}
+                    
+                    {/* Second Row: Trend and Analysis */}
+                    <div className="flex items-center gap-3">
+                      {item.trend_data && item.trend_data.length > 0 && (
+                        <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-slate-200">
+                          <TrendingUp size={14} className="text-blue-600" />
+                          <Sparkline 
+                            data={item.trend_data} 
+                            color={item.search_volume === 'high' ? '#dc2626' : item.search_volume === 'medium' ? '#f59e0b' : '#16a34a'}
+                          />
+                          <span className="text-xs text-slate-500">12mo trend</span>
+                        </div>
+                      )}
+                      {item.difficulty_analysis && (
+                        <p className="text-xs text-slate-600">{item.difficulty_analysis}</p>
+                      )}
+                    </div>
                   </div>
                   <div className={`px-3 py-1 rounded-lg text-xs font-bold ${
                     item.difficulty >= 70 ? 'bg-red-100 text-red-700' :
