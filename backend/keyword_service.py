@@ -131,6 +131,10 @@ search_volume must be: high, medium, or low"""
                     validated_questions.append(q)
             questions = validated_questions
         
+        if not questions or len(questions) == 0:
+            logger.warning(f"No questions returned from API for {keyword}, using fallback")
+            raise Exception("No questions in API response")
+        
         logger.info(f"Discovered {len(questions)} questions for keyword: {keyword}")
         return questions
         
@@ -142,7 +146,12 @@ search_volume must be: high, medium, or low"""
             {"question": f"How to choose {keyword}?", "search_volume": "high"},
             {"question": f"Top 10 {keyword} recommendations", "search_volume": "medium"},
             {"question": f"{keyword} buying guide", "search_volume": "medium"},
-            {"question": f"How does {keyword} work?", "search_volume": "low"}
+            {"question": f"How does {keyword} work?", "search_volume": "low"},
+            {"question": f"{keyword} for beginners", "search_volume": "medium"},
+            {"question": f"Best budget {keyword}", "search_volume": "high"},
+            {"question": f"{keyword} pros and cons", "search_volume": "low"},
+            {"question": f"How to use {keyword}", "search_volume": "medium"},
+            {"question": f"{keyword} reviews and ratings", "search_volume": "high"}
         ]
 
 
