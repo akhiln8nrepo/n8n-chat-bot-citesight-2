@@ -6,6 +6,7 @@ import Navigation from './Navigation';
 import { toast } from 'sonner';
 
 const ContentManagement = () => {
+  const navigate = useNavigate();
   const [content, setContent] = useState([]);
   const [publishers, setPublishers] = useState([]);
   const [loading, setLoading] = useState(true);
