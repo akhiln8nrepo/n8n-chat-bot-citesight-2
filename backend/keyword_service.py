@@ -47,6 +47,69 @@ AI_MODELS = {
 }
 
 
+def classify_keyword_intent(question: str) -> str:
+    """
+    Classify keyword intent based on question pattern
+    Returns: I (Informational), N (Navigational), C (Commercial), T (Transactional)
+    """
+    question_lower = question.lower()
+    
+    # Transactional intent keywords
+    transactional_keywords = [
+        'buy', 'purchase', 'order', 'download', 'get', 'sign up', 
+        'subscribe', 'register', 'book', 'reserve', 'trial', 'demo'
+    ]
+    
+    # Commercial intent keywords
+    commercial_keywords = [
+        'best', 'top', 'review', 'compare', 'vs', 'versus', 'alternative',
+        'cheap', 'affordable', 'price', 'cost', 'deal', 'discount',
+        'recommendation', 'which', 'should i'
+    ]
+    
+    # Navigational intent keywords
+    navigational_keywords = [
+        'login', 'sign in', 'website', 'official', 'homepage',
+        'customer service', 'support', 'contact', 'portal'
+    ]
+    
+    # Check for transactional
+    if any(keyword in question_lower for keyword in transactional_keywords):
+        return 'T'
+    
+    # Check for navigational
+    if any(keyword in question_lower for keyword in navigational_keywords):
+        return 'N'
+    
+    # Check for commercial
+    if any(keyword in question_lower for keyword in commercial_keywords):
+        return 'C'
+    
+    # Default to informational
+    return 'I'
+
+
+def generate_search_trend_data() -> List[int]:
+    """
+    Generate simulated search volume trend data for past 12 months
+    Returns array of 12 values representing monthly search volumes
+    """
+    import random
+    
+    # Generate realistic trend with some seasonality
+    base_volume = random.randint(1000, 5000)
+    trend = []
+    
+    for i in range(12):
+        # Add some randomness and seasonal variation
+        seasonal_factor = 1 + 0.3 * (i % 4 - 1.5) / 1.5  # Slight seasonal pattern
+        random_factor = random.uniform(0.8, 1.2)
+        volume = int(base_volume * seasonal_factor * random_factor)
+        trend.append(max(volume, 100))  # Ensure minimum volume
+    
+    return trend
+
+
 async def discover_llm_questions(keyword: str) -> List[Dict]:
     """
     Discover previously asked LLM questions related to a keyword
