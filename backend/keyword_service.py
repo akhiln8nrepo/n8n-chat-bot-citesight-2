@@ -198,6 +198,15 @@ search_volume must be: high, medium, or low"""
             logger.warning(f"No questions returned from API for {keyword}, using fallback")
             raise Exception("No questions in API response")
         
+        # Add intent classification and trends to all questions
+        logger.info(f"Adding intent classification and trends...")
+        for q in questions:
+            # Classify intent
+            q['intent'] = classify_keyword_intent(q['question'])
+            
+            # Generate trend data
+            q['trend_data'] = generate_search_trend_data()
+        
         # Calculate difficulty for each question (for first 5 to save API calls)
         logger.info(f"Calculating keyword difficulty for top 5 questions...")
         for i, q in enumerate(questions[:5]):
