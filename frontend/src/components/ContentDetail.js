@@ -36,16 +36,29 @@ const ContentDetail = () => {
       const response = await axios.get(`/content/${contentId}`);
       setContent(response.data);
       
-      // Get all associated keywords
+      // Get keywords for this specific content
       try {
-        const keywordRes = await axios.get(`/keywords`);
-        const contentKeywords = keywordRes.data.filter(k => k.content_id === contentId);
-        setKeywords(contentKeywords);
-        if (contentKeywords.length > 0) {
-          setKeyword(contentKeywords[0].keyword);
+        // Try the specific endpoint first
+        const keywordRes = await axios.get(`/keywords/${contentId}`);
+        setKeywords(keywordRes.data);
+        if (keywordRes.data.length > 0) {
+          setKeyword(keywordRes.data[0].keyword);
         }
+        console.log('Keywords fetched:', keywordRes.data.length);
       } catch (error) {
         console.error('Error fetching keywords:', error);
+        // Try fallback to get all keywords
+        try {
+          const allKeywordsRes = await axios.get(`/keywords`);
+          const contentKeywords = allKeywordsRes.data.filter(k => k.content_id === contentId);
+          setKeywords(contentKeywords);
+          if (contentKeywords.length > 0) {
+            setKeyword(contentKeywords[0].keyword);
+          }
+          console.log('Keywords fetched (fallback):', contentKeywords.length);
+        } catch (fallbackError) {
+          console.error('Error fetching keywords (fallback):', fallbackError);
+        }
       }
       
       setLoading(false);
