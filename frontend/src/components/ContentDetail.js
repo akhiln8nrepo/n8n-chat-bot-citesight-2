@@ -10,17 +10,23 @@ import { toast } from 'sonner';
 const ContentDetail = () => {
   const { contentId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [content, setContent] = useState(null);
   const [keyword, setKeyword] = useState('');
   const [keywords, setKeywords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [showAddKeyword, setShowAddKeyword] = useState(false);
   const [newKeyword, setNewKeyword] = useState('');
 
   useEffect(() => {
     fetchContentDetail();
-  }, [contentId]);
+    // Set tab from URL parameter
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [contentId, searchParams]);
 
   const fetchContentDetail = async () => {
     try {
