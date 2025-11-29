@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '@/utils/axios';
-import { FileText, Plus, Eye, TrendingUp, X } from 'lucide-react';
+import { FileText, Plus, Eye, TrendingUp, X, Sparkles } from 'lucide-react';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
 
