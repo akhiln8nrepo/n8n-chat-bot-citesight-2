@@ -213,7 +213,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Content Recommendations Feature - AI-Powered Content Optimization"
     - "Authentication System (Register, Login, 2FA, Password Reset)"
   stuck_tasks:
     - "Authentication System (Register, Login, 2FA, Password Reset)"
