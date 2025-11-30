@@ -1064,6 +1064,8 @@ async def apply_content_recommendations(content_id: str, request: ApplyRecommend
         
         return {
             "message": "Recommendations applied successfully",
+            "original_title": content['title'],
+            "original_content": content['content_text'],
             "optimized_title": optimized['optimized_title'],
             "optimized_content": optimized['optimized_content'],
             "changes_summary": optimized['changes_summary']
