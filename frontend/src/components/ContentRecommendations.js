@@ -178,33 +178,72 @@ const ContentRecommendations = ({ contentId, onApply, onViewUpdated }) => {
             
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
               <div className="space-y-6">
+                {/* Title Comparison */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 size={20} className="text-green-600" />
-                    <h4 className="font-bold text-slate-900">New Title</h4>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-slate-900 font-medium">{optimizedContent.optimized_title}</p>
+                  <h4 className="font-bold text-slate-900 mb-3">Title Comparison</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold text-slate-600 uppercase">Original</span>
+                      </div>
+                      <div className="bg-slate-100 p-4 rounded-lg border-2 border-slate-300">
+                        <p className="text-slate-700 font-medium">{optimizedContent.original_title}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 size={16} className="text-green-600" />
+                        <span className="text-xs font-semibold text-green-700 uppercase">Optimized</span>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300">
+                        <p className="text-slate-900 font-medium">{optimizedContent.optimized_title}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
+                {/* Content Comparison */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 size={20} className="text-green-600" />
-                    <h4 className="font-bold text-slate-900">Updated Content</h4>
+                  <h4 className="font-bold text-slate-900 mb-3">Content Comparison</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold text-slate-600 uppercase">Original Content</span>
+                      </div>
+                      <div className="bg-slate-100 p-4 rounded-lg border-2 border-slate-300 max-h-96 overflow-y-auto">
+                        <p className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">{optimizedContent.original_content}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 size={16} className="text-green-600" />
+                        <span className="text-xs font-semibold text-green-700 uppercase">Optimized Content</span>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300 max-h-96 overflow-y-auto">
+                        <p className="text-slate-900 text-sm whitespace-pre-wrap leading-relaxed font-medium">{optimizedContent.optimized_content}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-lg max-h-96 overflow-y-auto">
-                    <p className="text-slate-700 whitespace-pre-wrap">{optimizedContent.optimized_content}</p>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-slate-100 border-2 border-slate-300 rounded"></div>
+                      <span>Original</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-green-50 border-2 border-green-300 rounded"></div>
+                      <span>Optimized with AI improvements</span>
+                    </div>
                   </div>
                 </div>
 
+                {/* Changes Summary */}
                 {optimizedContent.changes_summary && optimizedContent.changes_summary.length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle2 size={20} className="text-blue-600" />
                       <h4 className="font-bold text-slate-900">Changes Applied</h4>
                     </div>
-                    <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                       <ul className="list-disc list-inside space-y-1">
                         {optimizedContent.changes_summary.map((change, index) => (
                           <li key={index} className="text-sm text-slate-700">{change}</li>
