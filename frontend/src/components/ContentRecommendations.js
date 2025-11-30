@@ -249,7 +249,10 @@ const ContentRecommendations = ({ contentId, onApply, onViewUpdated }) => {
                         <span className="text-xs font-semibold text-green-700 uppercase">Optimized Content</span>
                       </div>
                       <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300 max-h-96 overflow-y-auto">
-                        <p className="text-slate-900 text-sm whitespace-pre-wrap leading-relaxed font-medium">{optimizedContent.optimized_content}</p>
+                        <DiffText 
+                          original={optimizedContent.original_content || ''} 
+                          optimized={optimizedContent.optimized_content || ''} 
+                        />
                       </div>
                     </div>
                   </div>
