@@ -3,6 +3,35 @@ import axios from '@/utils/axios';
 import { Sparkles, CheckCircle2, Loader2, Layout, FileText, X, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Helper function to highlight differences between original and optimized text
+const DiffText = ({ original, optimized }) => {
+  // Split texts into words for comparison
+  const originalWords = original.split(/(\s+)/);
+  const optimizedWords = optimized.split(/(\s+)/);
+  
+  // Simple diff highlighting - words in optimized that aren't in original are highlighted
+  const originalSet = new Set(originalWords.map(w => w.trim().toLowerCase()).filter(w => w));
+  
+  return (
+    <div className="text-slate-900 text-sm whitespace-pre-wrap leading-relaxed">
+      {optimizedWords.map((word, index) => {
+        const cleanWord = word.trim().toLowerCase();
+        const isNew = cleanWord && !originalSet.has(cleanWord);
+        
+        return (
+          <span
+            key={index}
+            className={isNew ? 'bg-yellow-200 font-semibold px-0.5' : ''}
+            title={isNew ? 'New content added by AI' : ''}
+          >
+            {word}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
 const ContentRecommendations = ({ contentId, onApply, onViewUpdated }) => {
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
