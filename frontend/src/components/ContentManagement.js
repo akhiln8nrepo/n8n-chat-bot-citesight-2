@@ -34,27 +34,16 @@ const ContentManagement = () => {
 
   const fetchData = async () => {
     try {
-      console.log('[ContentManagement] Starting fetchData...');
-      console.log('[ContentManagement] Token in localStorage:', !!localStorage.getItem('access_token'));
-      
       // Get or create publisher for logged-in user
-      console.log('[ContentManagement] Fetching publisher...');
       const publisherRes = await axios.get('/publishers/me');
-      console.log('[ContentManagement] Publisher response:', publisherRes.data);
       setPublishers([publisherRes.data]);
       
       // Get content
-      console.log('[ContentManagement] Fetching content...');
       const contentRes = await axios.get('/content');
-      console.log('[ContentManagement] Content response:', contentRes.data);
       setContent(contentRes.data);
       setLoading(false);
-      console.log('[ContentManagement] Data loaded successfully');
     } catch (error) {
-      console.error('[ContentManagement] Error fetching data:', error);
-      console.error('[ContentManagement] Error response:', error.response);
-      console.error('[ContentManagement] Error status:', error.response?.status);
-      console.error('[ContentManagement] Error data:', error.response?.data);
+      console.error('Error fetching data:', error);
       setLoading(false);
       
       // Don't show error toast for 401 - the axios interceptor will handle redirect
