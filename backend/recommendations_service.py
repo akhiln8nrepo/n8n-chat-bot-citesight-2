@@ -183,10 +183,21 @@ Make the content comprehensive, authoritative, and optimized for AI visibility."
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=4000
+            max_tokens=4000,
+            response_format={"type": "json_object"}
         )
         
-        optimized = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        logger.info(f"OpenRouter response: {content[:200]}...")
+        
+        # Try to extract JSON from markdown code blocks if present
+        import re
+        if "```json" in content:
+            content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
+        elif "```" in content:
+            content = re.search(r'```\s*(.*?)\s*```', content, re.DOTALL).group(1)
+        
+        optimized = json.loads(content.strip())
         
         logger.info("Recommendations applied successfully")
         return optimized
