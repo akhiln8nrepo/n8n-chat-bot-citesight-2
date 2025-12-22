@@ -576,19 +576,19 @@ class AIContentMonitorTester:
         )
 
 def main():
-    print("🚀 Starting CiteSight API Tests")
-    print("=" * 50)
+    print("🚀 Starting 7-Layer GEO Prompt Generation Framework Tests")
+    print("=" * 70)
     
-    # Run 7-Factor Scoring Tests
-    seven_factor_tester = SevenFactorScoringTester()
-    seven_factor_success = seven_factor_tester.run_all_tests()
+    # Run GEO Framework Tests
+    geo_tester = GEOPromptFrameworkTester()
+    geo_success = geo_tester.run_all_tests()
     
-    if not seven_factor_success:
-        print("\n❌ 7-Factor Scoring tests failed")
+    if not geo_success:
+        print("\n❌ 7-Layer GEO Framework tests failed")
         return 1
     
-    print("\n" + "=" * 50)
-    print("🎉 All CiteSight tests completed successfully!")
+    print("\n" + "=" * 70)
+    print("🎉 All 7-Layer GEO Framework tests completed successfully!")
     return 0
 
 if __name__ == "__main__":
