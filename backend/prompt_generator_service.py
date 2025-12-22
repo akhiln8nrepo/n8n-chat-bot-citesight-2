@@ -424,30 +424,42 @@ Return ONLY a JSON array:
     
     async def _categorize_and_rank_prompts(self, prompts: List[Dict], website_data: Dict) -> List[Dict]:
         """
-        Categorize and rank all prompts by business value
+        Categorize and rank all prompts using 7-factor weighted scoring algorithm
+        
+        7 Metrics (0-100 scale each):
+        1. Business Value (25%) - Commercial intent and conversion potential
+        2. Volume (20%) - Estimated search/query volume
+        3. Competition (15%) - Difficulty to rank (inverted - lower competition = higher score)
+        4. Feasibility (15%) - Likelihood of being mentioned by AI
+        5. Intent Score (10%) - Buyer journey stage score
+        6. Citation Potential (10%) - Likelihood of being cited/referenced
+        7. Brand Relevance (5%) - How relevant to your specific brand
         """
-        logger.info(f"Categorizing and ranking {len(prompts)} prompts")
+        logger.info(f"Categorizing and ranking {len(prompts)} prompts with 7-factor scoring")
         
         for prompt_data in prompts:
-            # Add business value metrics (0-100 score)
+            # Calculate all 7 metrics (0-100 scale)
             prompt_data['business_value'] = self._calculate_business_value(prompt_data, website_data)
             prompt_data['volume'] = self._estimate_volume(prompt_data)
             prompt_data['competition'] = self._estimate_competition(prompt_data)
             prompt_data['feasibility'] = self._estimate_feasibility(prompt_data, website_data)
+            prompt_data['intent_score'] = self._calculate_intent_score(prompt_data)  # NEW 7th metric
             prompt_data['citation_potential'] = self._estimate_citation_potential(prompt_data)
             prompt_data['brand_relevance'] = self._calculate_brand_relevance(prompt_data, website_data)
             
-            # Calculate overall score
+            # Calculate weighted composite score (7-factor algorithm)
+            # Weights: BV=25%, Vol=20%, Comp=15%, Feas=15%, Intent=10%, Citation=10%, Relevance=5%
             prompt_data['overall_score'] = (
-                prompt_data['business_value'] * 0.3 +
-                prompt_data['volume'] * 0.2 +
-                (100 - prompt_data['competition']) * 0.15 +
+                prompt_data['business_value'] * 0.25 +
+                prompt_data['volume'] * 0.20 +
+                (100 - prompt_data['competition']) * 0.15 +  # Invert competition (lower = better)
                 prompt_data['feasibility'] * 0.15 +
-                prompt_data['citation_potential'] * 0.1 +
-                prompt_data['brand_relevance'] * 0.1
+                prompt_data['intent_score'] * 0.10 +
+                prompt_data['citation_potential'] * 0.10 +
+                prompt_data['brand_relevance'] * 0.05
             )
         
-        # Sort by overall score
+        # Sort by overall score (highest first)
         ranked_prompts = sorted(prompts, key=lambda x: x.get('overall_score', 0), reverse=True)
         
         # Add rank
@@ -455,6 +467,48 @@ Return ONLY a JSON array:
             p['rank'] = i
         
         return ranked_prompts
+    
+    def _calculate_intent_score(self, prompt_data: Dict) -> int:
+        """
+        Calculate Intent Score (0-100) based on buyer journey stage
+        
+        Intent mapping to scores:
+        - recommendation_seeking: 90-100 (highest commercial intent)
+        - problem_solving: 75-90 (active problem, likely to convert)
+        - instructions: 60-75 (specific need, moderate intent)
+        - information_seeking: 40-60 (early stage research)
+        - research: 30-50 (deep research, may convert later)
+        - creative: 20-40 (lowest commercial intent)
+        """
+        intent = prompt_data.get('intent', 'information_seeking').lower()
+        text = prompt_data.get('prompt', '').lower()
+        
+        # Base score by intent category
+        intent_scores = {
+            'recommendation_seeking': 95,
+            'problem_solving': 82,
+            'instructions': 68,
+            'information_seeking': 50,
+            'research': 40,
+            'creative': 30
+        }
+        
+        score = intent_scores.get(intent, 50)
+        
+        # Boost score based on high-intent keywords
+        high_intent_keywords = ['buy', 'purchase', 'pricing', 'cost', 'trial', 'demo', 'best', 'recommend', 'should i']
+        medium_intent_keywords = ['compare', 'vs', 'alternative', 'review', 'difference']
+        low_intent_keywords = ['what is', 'define', 'explain', 'learn', 'understand']
+        
+        # Adjust based on keywords found
+        if any(kw in text for kw in high_intent_keywords):
+            score = min(100, score + 10)
+        elif any(kw in text for kw in medium_intent_keywords):
+            score = min(100, score + 5)
+        elif any(kw in text for kw in low_intent_keywords):
+            score = max(20, score - 10)
+        
+        return score
     
     def _calculate_business_value(self, prompt_data: Dict, website_data: Dict) -> int:
         """Calculate business value score (1-10 scale)"""
