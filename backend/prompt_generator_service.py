@@ -572,24 +572,41 @@ Return ONLY a JSON array:
         return max(0, min(100, score))
     
     def _estimate_competition(self, prompt_data: Dict) -> int:
-        """Estimate competition level (1-10, LOWER is better/easier)"""
+        """
+        Estimate competition level (0-100 scale)
+        HIGHER score = MORE competition = HARDER to rank
+        In overall score calculation, this is inverted (100 - competition)
+        """
         text = prompt_data.get('prompt', '').lower()
-        score = 5  # Base score
+        score = 50  # Base score
         
-        # High competition (lower score = more competitive)
-        if any(word in text for word in ['best', 'top']):
-            score -= 2
+        # High competition keywords (harder to rank)
+        if any(word in text for word in ['best', 'top', '#1']):
+            score += 25
+        if any(word in text for word in ['vs', 'compare', 'review']):
+            score += 15
+        if any(word in text for word in ['software', 'tool', 'platform', 'app']):
+            score += 10
         
-        # Lower competition (higher score = less competitive/easier)
-        if any(word in text for word in ['specific', 'niche']):
-            score += 2
-        
-        # Brand-specific = less competition
+        # Lower competition (easier to rank)
         source = prompt_data.get('source', '')
         if 'competitor' in source:
-            score += 2
+            score -= 15  # Brand comparison queries have less competition
+        if 'reddit' in source:
+            score -= 10  # Reddit-derived queries are more niche
         
-        return max(1, min(10, score))
+        # Long-tail = less competition
+        word_count = len(text.split())
+        if word_count > 8:
+            score -= 15
+        elif word_count > 6:
+            score -= 10
+        
+        # Specific industry/niche terms = less competition
+        if any(word in text for word in ['specific', 'niche', 'enterprise', 'small business']):
+            score -= 10
+        
+        return max(0, min(100, score))
     
     def _estimate_feasibility(self, prompt_data: Dict, website_data: Dict) -> int:
         """Estimate feasibility of ranking (1-10 scale)"""
