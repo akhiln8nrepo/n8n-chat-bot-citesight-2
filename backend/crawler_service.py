@@ -4,12 +4,18 @@ Extracts content from user websites for prompt generation
 """
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 import logging
 import requests
 from typing import Dict, List, Optional
 import asyncio
 from bs4 import BeautifulSoup
 import re
+
+# Load environment variables
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
 logger = logging.getLogger(__name__)
 
