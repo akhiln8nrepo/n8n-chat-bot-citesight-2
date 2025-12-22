@@ -63,14 +63,10 @@ class CrawlerService:
         
         payload = {
             'url': url,
-            'pageOptions': {
-                'onlyMainContent': True,
-                'includeHtml': False
-            },
-            'crawlerOptions': {
-                'maxDepth': 2,
-                'limit': max_pages
-            }
+            'formats': ['markdown', 'html'],
+            'onlyMainContent': True,
+            'waitFor': 2000,
+            'timeout': 30000
         }
         
         response = requests.post(endpoint, json=payload, headers=self.headers, timeout=60)
@@ -79,17 +75,39 @@ class CrawlerService:
         data = response.json()
         
         if data.get('success'):
+            # Extract comprehensive data from Firecrawl
+            scraped_data = data.get('data', {})
+            
             return {
                 'success': True,
                 'url': url,
-                'title': data.get('data', {}).get('title', ''),
-                'content': data.get('data', {}).get('markdown', ''),
-                'metadata': data.get('data', {}).get('metadata', {}),
-                'links': data.get('data', {}).get('links', []),
+                'title': scraped_data.get('metadata', {}).get('title', '') or scraped_data.get('title', ''),
+                'content': scraped_data.get('markdown', '') or scraped_data.get('content', ''),
+                'metadata': {
+                    'description': scraped_data.get('metadata', {}).get('description', ''),
+                    'keywords': scraped_data.get('metadata', {}).get('keywords', ''),
+                    'og_title': scraped_data.get('metadata', {}).get('ogTitle', ''),
+                    'og_description': scraped_data.get('metadata', {}).get('ogDescription', ''),
+                    'headings': self._extract_headings_from_html(scraped_data.get('html', ''))
+                },
+                'links': scraped_data.get('links', []),
                 'method': 'firecrawl'
             }
         
         return {'success': False, 'error': 'Firecrawl API returned unsuccessful response'}
+    
+    def _extract_headings_from_html(self, html: str) -> List[str]:
+        """Extract headings from HTML"""
+        if not html:
+            return []
+        
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, 'html.parser')
+            headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
+            return headings[:10]
+        except:
+            return []
     
     async def _crawl_with_custom(self, url: str, max_pages: int) -> Dict:
         """
