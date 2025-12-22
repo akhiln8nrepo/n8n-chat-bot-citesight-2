@@ -609,21 +609,40 @@ Return ONLY a JSON array:
         return max(0, min(100, score))
     
     def _estimate_feasibility(self, prompt_data: Dict, website_data: Dict) -> int:
-        """Estimate feasibility of ranking (1-10 scale)"""
+        """
+        Estimate feasibility of being mentioned by AI (0-100 scale)
+        Higher = more likely your brand will be mentioned
+        """
         text = prompt_data.get('prompt', '').lower()
-        score = 6  # Base score (slightly optimistic)
+        score = 55  # Base score (slightly optimistic)
         
-        # Check brand mention
+        # Direct brand mention = very high feasibility
         product_name = website_data.get('name', '').lower()
         if product_name and product_name in text:
-            score += 2
+            score += 30
         
-        # Check if features match
+        # Check if key topics/features match
         key_topics = [t.lower() for t in website_data.get('key_topics', [])]
         matches = sum(1 for topic in key_topics if topic in text)
-        score += min(matches, 2)  # Max +2 for feature matches
+        score += min(matches * 8, 24)  # Max +24 for feature matches
         
-        return max(1, min(10, score))
+        # Industry keyword alignment
+        industry_kw = [k.lower() for k in website_data.get('industry_keywords', [])]
+        industry_matches = sum(1 for kw in industry_kw if kw and kw in text)
+        score += min(industry_matches * 5, 15)  # Max +15 for industry alignment
+        
+        # User description match (if provided)
+        user_desc = website_data.get('user_description', '').lower()
+        if user_desc:
+            desc_words = user_desc.split()[:10]  # First 10 words
+            desc_matches = sum(1 for w in desc_words if len(w) > 4 and w in text)
+            score += min(desc_matches * 5, 15)
+        
+        # Question format = higher feasibility (AI likes answering questions)
+        if text.startswith(('what', 'how', 'why', 'which', 'should', 'can', 'is')):
+            score += 5
+        
+        return max(0, min(100, score))
     
     def _estimate_citation_potential(self, prompt_data: Dict) -> int:
         """Estimate potential to be cited by AI (1-10 scale)"""
