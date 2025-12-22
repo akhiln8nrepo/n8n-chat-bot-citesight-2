@@ -378,7 +378,7 @@ Return ONLY a JSON array:
                 query = f"top {industry} companies alternatives"
                 results = self.tavily_client.search(query, max_results=3)
                 competitors = [r.get('title', '') for r in results.get('results', [])]
-            except:
+            except Exception:
                 competitors = []
         
         prompt = f"""
