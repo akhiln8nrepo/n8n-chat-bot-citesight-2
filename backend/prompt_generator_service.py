@@ -645,22 +645,44 @@ Return ONLY a JSON array:
         return max(0, min(100, score))
     
     def _estimate_citation_potential(self, prompt_data: Dict) -> int:
-        """Estimate potential to be cited by AI (1-10 scale)"""
+        """
+        Estimate potential to be cited/referenced by AI (0-100 scale)
+        Higher = more likely to generate citations/recommendations
+        """
         text = prompt_data.get('prompt', '').lower()
         intent = prompt_data.get('intent', '')
-        score = 5  # Base score
+        score = 50  # Base score
         
-        # High citation potential
-        if intent in ['recommendation_seeking', 'research']:
-            score += 3
-        if any(word in text for word in ['review', 'experience', 'opinion', 'vs', 'compare']):
-            score += 1
+        # High citation potential intents
+        intent_boost = {
+            'recommendation_seeking': 25,
+            'research': 20,
+            'problem_solving': 15,
+            'instructions': 10,
+            'information_seeking': 5,
+            'creative': 0
+        }
+        score += intent_boost.get(intent, 5)
         
-        # Question format = higher citation
+        # Citation-driving keywords
+        if any(word in text for word in ['review', 'reviews', 'experience', 'opinion']):
+            score += 15
+        if any(word in text for word in ['vs', 'compare', 'comparison', 'difference']):
+            score += 15
+        if any(word in text for word in ['recommend', 'suggestion', 'advice']):
+            score += 10
+        if any(word in text for word in ['best', 'top', 'leading']):
+            score += 10
+        
+        # Question format = higher citation potential
         if text.startswith(('what', 'how', 'why', 'which', 'should')):
-            score += 1
+            score += 5
         
-        return max(1, min(10, score))
+        # Comparison queries drive citations
+        if ' or ' in text or ' vs ' in text:
+            score += 10
+        
+        return max(0, min(100, score))
     
     def _calculate_brand_relevance(self, prompt_data: Dict, website_data: Dict) -> int:
         """Calculate brand relevance (1-10 scale)"""
