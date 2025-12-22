@@ -10,19 +10,26 @@ import {
   LogOut,
   Menu,
   X,
-  Zap
+  Zap,
+  Eye,
+  Bell,
+  ChevronRight,
+  Activity,
+  PieChart
 } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
+  const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetchUserData();
     fetchStats();
+    fetchPrompts();
   }, []);
 
   const fetchUserData = async () => {
@@ -41,9 +48,18 @@ const Dashboard = () => {
     try {
       const response = await axios.get('/prompts/stats');
       setStats(response.data);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchPrompts = async () => {
+    try {
+      const response = await axios.get('/prompts');
+      setPrompts(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching prompts:', error);
       setLoading(false);
     }
   };
@@ -53,6 +69,46 @@ const Dashboard = () => {
     toast.success('Logged out successfully');
     navigate('/auth/login');
   };
+
+  const getCategoryLabel = (intent) => {
+    const labels = {
+      'information_seeking': 'INFO',
+      'recommendation_seeking': 'REC',
+      'instructions': 'INS',
+      'problem_solving': 'SOLVE',
+      'creative': 'CREATE',
+      'research': 'RES'
+    };
+    return labels[intent] || intent;
+  };
+
+  const getCategoryColor = (intent) => {
+    const colors = {
+      'information_seeking': 'bg-blue-100 text-blue-700',
+      'recommendation_seeking': 'bg-green-100 text-green-700',
+      'instructions': 'bg-yellow-100 text-yellow-700',
+      'problem_solving': 'bg-red-100 text-red-700',
+      'creative': 'bg-purple-100 text-purple-700',
+      'research': 'bg-indigo-100 text-indigo-700'
+    };
+    return colors[intent] || 'bg-gray-100 text-gray-700';
+  };
+
+  const getSourceColor = (source) => {
+    const colors = {
+      'ai_testing': '#3B82F6',
+      'reddit_mining': '#F97316',
+      'customer_surveys': '#8B5CF6',
+      'keyword_conversion': '#10B981',
+      'competitor_analysis': '#EF4444'
+    };
+    return colors[source] || '#6B7280';
+  };
+
+  // Calculate monitored prompts (simulated for now)
+  const monitoredCount = Math.floor((stats?.total_prompts || 0) * 0.48);
+  const brandMentionRate = stats?.total_prompts > 0 ? 58.5 : 0;
+  const avgScore = stats?.avg_overall_score || ((stats?.avg_business_value || 0) * 0.25 + (stats?.avg_feasibility || 0) * 0.15).toFixed(1);
 
   if (loading) {
     return (
@@ -75,21 +131,35 @@ const Dashboard = () => {
               >
                 {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <h1 className="text-2xl font-bold text-blue-600">CiteSight</h1>
+              <div className="flex items-center gap-2">
+                <Target className="text-blue-600" size={28} />
+                <h1 className="text-xl font-bold text-slate-900">GEO Monitor</h1>
+              </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-6">
+              <button onClick={() => navigate('/dashboard')} className="text-blue-600 font-medium">Dashboard</button>
+              <button onClick={() => navigate('/prompts')} className="text-slate-600 hover:text-slate-900">Prompts</button>
+              <button className="text-slate-400 cursor-not-allowed">Monitoring</button>
+              <button className="text-slate-400 cursor-not-allowed">Analytics</button>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-slate-900">{user?.first_name} {user?.last_name}</p>
-                <p className="text-xs text-slate-500">{user?.company_name}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <LogOut size={18} />
-                <span className="hidden sm:inline">Logout</span>
+              <button className="p-2 rounded-lg hover:bg-slate-100 relative">
+                <Bell size={20} className="text-slate-600" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+                  {user?.first_name?.[0]}{user?.last_name?.[0]}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-slate-600 hover:text-slate-900"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -103,177 +173,204 @@ const Dashboard = () => {
         />
       )}
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className={`
-          fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r border-slate-200 z-40
-          transform transition-transform duration-200 ease-in-out
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}>
-          <nav className="p-4 space-y-2">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="w-full flex items-center gap-3 px-4 py-3 text-blue-600 bg-blue-50 rounded-lg font-medium"
-            >
-              <BarChart3 size={20} />
-              Dashboard
-            </button>
-            
-            <button
-              onClick={() => navigate('/prompts')}
-              className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-100 rounded-lg font-medium transition-colors"
-            >
-              <Target size={20} />
-              Prompt Monitoring
-            </button>
-
-            <div className="pt-4 mt-4 border-t border-slate-200">
-              <p className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Coming Soon
-              </p>
-              <button
-                disabled
-                className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg font-medium cursor-not-allowed"
-              >
-                <TrendingUp size={20} />
-                Competitor Analysis
-              </button>
-              <button
-                disabled
-                className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg font-medium cursor-not-allowed"
-              >
-                <Zap size={20} />
-                AI Simulator
-              </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">Total Prompts</span>
+              <Target className="text-blue-500" size={20} />
             </div>
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8 max-w-7xl">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">
-              Welcome back, {user?.first_name}! 👋
-            </h2>
-            <p className="text-slate-600">
-              Here's your AI visibility overview for {user?.company_name}
-            </p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl p-6 border border-slate-200 hover:border-blue-300 transition-colors">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Target className="text-blue-600" size={24} />
-                </div>
-                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                  WEEKLY
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">{stats?.total_prompts || 0}</p>
-              <p className="text-sm text-slate-600">Total Prompts</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 border border-slate-200 hover:border-green-300 transition-colors">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Award className="text-green-600" size={24} />
-                </div>
-                <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                  AVG
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">{stats?.avg_business_value || 0}</p>
-              <p className="text-sm text-slate-600">Business Value</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 border border-slate-200 hover:border-purple-300 transition-colors">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <TrendingUp className="text-purple-600" size={24} />
-                </div>
-                <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-                  AVG
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">{stats?.avg_feasibility || 0}</p>
-              <p className="text-sm text-slate-600">Feasibility Score</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 border border-slate-200 hover:border-orange-300 transition-colors">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <BarChart3 className="text-orange-600" size={24} />
-                </div>
-                <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
-                  AVG
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mb-1">{stats?.avg_citation_potential || 0}</p>
-              <p className="text-sm text-slate-600">Citation Potential</p>
+            <p className="text-3xl font-bold text-slate-900">{stats?.total_prompts || 0}</p>
+            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
+              <TrendingUp size={14} />
+              <span>+5 new</span>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 mb-8">
-            <h3 className="text-xl font-bold text-slate-900 mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                onClick={() => navigate('/prompts')}
-                className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-colors group"
-              >
-                <Target className="text-blue-600 group-hover:scale-110 transition-transform" size={32} />
-                <div className="text-left">
-                  <p className="font-semibold text-slate-900">View All Prompts</p>
-                  <p className="text-sm text-slate-600">Browse and filter your 25 prompts</p>
-                </div>
-              </button>
-
-              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg opacity-60">
-                <TrendingUp className="text-slate-400" size={32} />
-                <div className="text-left">
-                  <p className="font-semibold text-slate-700">Competitor Analysis</p>
-                  <p className="text-sm text-slate-500">Coming soon</p>
-                </div>
-              </div>
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">Monitored Prompts</span>
+              <Eye className="text-green-500" size={20} />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{monitoredCount}</p>
+            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
+              <Activity size={14} />
+              <span>+3 active</span>
             </div>
           </div>
 
-          {/* Source Breakdown */}
-          {stats?.source_breakdown && Object.keys(stats.source_breakdown).length > 0 && (
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Prompt Sources</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {Object.entries(stats.source_breakdown).map(([source, count]) => (
-                  <div key={source} className="text-center p-4 bg-slate-50 rounded-lg">
-                    <p className="text-2xl font-bold text-slate-900">{count}</p>
-                    <p className="text-xs text-slate-600 mt-1 capitalize">
-                      {source.replace('_', ' ')}
-                    </p>
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">Brand Mentions</span>
+              <Award className="text-purple-500" size={20} />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{brandMentionRate}%</p>
+            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
+              <TrendingUp size={14} />
+              <span>↑ 5.2%</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">Avg Score</span>
+              <BarChart3 className="text-orange-500" size={20} />
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{avgScore}</p>
+            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
+              <TrendingUp size={14} />
+              <span>↑ 0.3</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Prompts by Category */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <PieChart size={20} className="text-blue-600" />
+              PROMPTS BY CATEGORY
+            </h3>
+            {stats?.intent_breakdown && Object.keys(stats.intent_breakdown).length > 0 ? (
+              <div className="space-y-3">
+                {Object.entries(stats.intent_breakdown).map(([intent, count]) => (
+                  <div key={intent} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${getCategoryColor(intent).split(' ')[0]}`}></div>
+                      <span className="text-sm text-slate-600 capitalize">{intent.replace('_', ' ')}</span>
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">({count})</span>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-8 text-slate-500">No category data available</div>
+            )}
+          </div>
 
-          {/* Info Banner */}
-          <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Zap className="text-blue-600" size={24} />
+          {/* Prompts by Source */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <BarChart3 size={20} className="text-green-600" />
+              PROMPTS BY SOURCE
+            </h3>
+            {stats?.source_breakdown && Object.keys(stats.source_breakdown).length > 0 ? (
+              <div className="space-y-3">
+                {Object.entries(stats.source_breakdown).map(([source, count]) => (
+                  <div key={source} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 capitalize">{source.replace('_', ' ')}</span>
+                      <span className="font-medium text-slate-900">{count}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="h-2 rounded-full" 
+                        style={{ 
+                          width: `${(count / (stats?.total_prompts || 1)) * 100}%`,
+                          backgroundColor: getSourceColor(source)
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <h4 className="font-semibold text-slate-900 mb-1">Prompts Updated Weekly</h4>
-                <p className="text-sm text-slate-600">
-                  Your prompts are automatically refreshed every Monday at 9 AM. We analyze your website, 
-                  mine Reddit discussions, study competitors, and generate 25 fresh AI-optimized prompts.
-                </p>
+            ) : (
+              <div className="text-center py-8 text-slate-500">No source data available</div>
+            )}
+          </div>
+        </div>
+
+        {/* Top Ranked Prompts */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
+          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">TOP RANKED PROMPTS</h3>
+            <button 
+              onClick={() => navigate('/prompts')}
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              View All <ChevronRight size={16} />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Prompt</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Score</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {prompts.slice(0, 5).map((prompt, index) => (
+                  <tr key={prompt.id || index} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{index + 1}</td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-slate-900 line-clamp-2 max-w-md">{prompt.prompt}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(prompt.intent)}`}>
+                        {getCategoryLabel(prompt.intent)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-semibold text-slate-900">{Math.round(prompt.overall_score)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => navigate('/prompts')}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded">
+                          <BarChart3 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Recent Alerts */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">RECENT ALERTS</h3>
+            <button className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              View All <ChevronRight size={16} />
+            </button>
+          </div>
+          <div className="divide-y divide-slate-100">
+            <div className="px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-slate-700">Brand mentioned in ChatGPT for "best PM tool"</span>
               </div>
+              <span className="text-xs text-slate-500">2 hours ago</span>
+            </div>
+            <div className="px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-slate-700">Competitor gained mention for "PM comparison"</span>
+              </div>
+              <span className="text-xs text-slate-500">5 hours ago</span>
+            </div>
+            <div className="px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-slate-700">Position improved: "project management tips"</span>
+              </div>
+              <span className="text-xs text-slate-500">1 day ago</span>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
