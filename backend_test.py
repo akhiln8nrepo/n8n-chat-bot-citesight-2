@@ -4,6 +4,241 @@ import json
 import time
 from datetime import datetime
 
+class SevenFactorScoringTester:
+    def __init__(self, base_url="https://promptr-3.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.access_token = None
+        self.user_id = None
+        self.test_email = f"test7factor@citesight.com"
+        
+    def run_test(self, name, method, endpoint, expected_status, data=None, params=None, headers=None):
+        """Run a single API test"""
+        url = f"{self.api_url}/{endpoint}" if endpoint else self.api_url
+        default_headers = {'Content-Type': 'application/json'}
+        
+        if headers:
+            default_headers.update(headers)
+            
+        if self.access_token and 'Authorization' not in default_headers:
+            default_headers['Authorization'] = f"Bearer {self.access_token}"
+
+        self.tests_run += 1
+        print(f"\n🔍 Testing {name}...")
+        print(f"   URL: {url}")
+        
+        try:
+            if method == 'GET':
+                response = requests.get(url, headers=default_headers, params=params)
+            elif method == 'POST':
+                response = requests.post(url, json=data, headers=default_headers)
+
+            print(f"   Response Status: {response.status_code}")
+            
+            success = response.status_code == expected_status
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                try:
+                    response_data = response.json()
+                    if isinstance(response_data, dict) and len(str(response_data)) < 1000:
+                        print(f"   Response: {response_data}")
+                    elif isinstance(response_data, list):
+                        print(f"   Response: List with {len(response_data)} items")
+                        if len(response_data) > 0:
+                            print(f"   First item: {response_data[0]}")
+                    return True, response_data
+                except:
+                    return True, {}
+            else:
+                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False, {}
+
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False, {}
+
+    def test_register_user(self):
+        """Test user registration with 7-factor scoring requirements"""
+        user_data = {
+            "email": self.test_email,
+            "password": "Test123!",
+            "first_name": "Test",
+            "last_name": "User", 
+            "company_name": "TestCo",
+            "website_url": "https://example.com",
+            "industry": "SaaS",
+            "product_description": "AI-powered analytics platform",
+            "competitors": ["competitor1.com"]
+        }
+        
+        success, response = self.run_test(
+            "Register User for 7-Factor Testing",
+            "POST",
+            "auth/register",
+            200,
+            data=user_data
+        )
+        
+        if success and 'access_token' in response:
+            self.access_token = response['access_token']
+            self.user_id = response['user']['id']
+            print(f"   Access Token: {self.access_token[:20]}...")
+            print(f"   User ID: {self.user_id}")
+            return True
+        return False
+
+    def test_onboarding_status(self, max_wait_time=120):
+        """Wait for onboarding to complete"""
+        print(f"\n🔍 Waiting for onboarding to complete (max {max_wait_time}s)...")
+        
+        start_time = time.time()
+        while time.time() - start_time < max_wait_time:
+            success, response = self.run_test(
+                "Check Onboarding Status",
+                "GET", 
+                "onboarding/status",
+                200
+            )
+            
+            if success and response.get('completed'):
+                prompt_count = response.get('prompt_count', 0)
+                print(f"✅ Onboarding completed! Generated {prompt_count} prompts")
+                return True
+                
+            print(f"   Onboarding in progress... ({int(time.time() - start_time)}s elapsed)")
+            time.sleep(5)
+        
+        print(f"❌ Onboarding did not complete within {max_wait_time} seconds")
+        return False
+
+    def test_prompts_have_7_metrics(self):
+        """Verify prompts have all 7 metrics including intent_score"""
+        success, response = self.run_test(
+            "Get Prompts with 7 Metrics",
+            "GET",
+            "prompts", 
+            200
+        )
+        
+        if not success or not response:
+            return False
+            
+        if not isinstance(response, list) or len(response) == 0:
+            print("❌ No prompts found")
+            return False
+            
+        # Check first prompt for all 7 metrics
+        first_prompt = response[0]
+        required_metrics = [
+            'business_value', 'volume', 'competition', 'feasibility', 
+            'intent_score', 'citation_potential', 'brand_relevance', 'overall_score'
+        ]
+        
+        missing_metrics = []
+        for metric in required_metrics:
+            if metric not in first_prompt:
+                missing_metrics.append(metric)
+        
+        if missing_metrics:
+            print(f"❌ Missing metrics: {missing_metrics}")
+            return False
+            
+        # Verify all values are 0-100 scale
+        scale_issues = []
+        for metric in required_metrics[:-1]:  # Exclude overall_score which can be float
+            value = first_prompt.get(metric, 0)
+            if not (0 <= value <= 100):
+                scale_issues.append(f"{metric}: {value}")
+                
+        if scale_issues:
+            print(f"❌ Values not in 0-100 scale: {scale_issues}")
+            return False
+            
+        print(f"✅ All 7 metrics present with correct scale (0-100)")
+        print(f"   Sample metrics: business_value={first_prompt['business_value']}, intent_score={first_prompt['intent_score']}")
+        
+        self.tests_passed += 1
+        return True
+
+    def test_stats_endpoint_7_metrics(self):
+        """Verify stats endpoint returns all 7 metrics including intent breakdown"""
+        success, response = self.run_test(
+            "Get Stats with 7 Metrics",
+            "GET",
+            "prompts/stats",
+            200
+        )
+        
+        if not success or not response:
+            return False
+            
+        required_stats = [
+            'avg_business_value', 'avg_volume', 'avg_competition', 'avg_feasibility',
+            'avg_intent_score', 'avg_citation_potential', 'avg_brand_relevance',
+            'intent_breakdown'
+        ]
+        
+        missing_stats = []
+        for stat in required_stats:
+            if stat not in response:
+                missing_stats.append(stat)
+                
+        if missing_stats:
+            print(f"❌ Missing stats: {missing_stats}")
+            return False
+            
+        print(f"✅ All 7 metric stats present including intent_breakdown")
+        print(f"   avg_intent_score: {response.get('avg_intent_score')}")
+        print(f"   intent_breakdown: {response.get('intent_breakdown')}")
+        
+        self.tests_passed += 1
+        return True
+
+    def run_all_tests(self):
+        """Run complete 7-factor scoring test flow"""
+        print("🚀 Starting 7-Factor Scoring Algorithm Tests")
+        print("=" * 60)
+        
+        # Test sequence
+        tests = [
+            ("Register User", self.test_register_user),
+            ("Wait for Onboarding", self.test_onboarding_status), 
+            ("Verify 7 Metrics in Prompts", self.test_prompts_have_7_metrics),
+            ("Verify 7 Metrics in Stats", self.test_stats_endpoint_7_metrics)
+        ]
+        
+        for test_name, test_func in tests:
+            try:
+                print(f"\n📋 Running: {test_name}")
+                result = test_func()
+                if not result:
+                    print(f"❌ {test_name} failed - stopping test sequence")
+                    break
+            except Exception as e:
+                print(f"❌ {test_name} failed with exception: {str(e)}")
+                self.tests_run += 1
+                break
+        
+        # Print final results
+        print("\n" + "=" * 60)
+        print(f"📊 7-Factor Scoring Test Results: {self.tests_passed}/{self.tests_run} tests passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All 7-factor scoring tests passed!")
+            return True
+        else:
+            print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
+            return False
+
+
 class AIContentMonitorTester:
     def __init__(self, base_url="https://promptr-3.preview.emergentagent.com"):
         self.base_url = base_url
