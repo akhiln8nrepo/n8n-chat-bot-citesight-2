@@ -79,6 +79,7 @@ class User(BaseModel):
     company_name: str
     website_url: str
     industry: str
+    product_description: Optional[str] = None
     competitors: List[str] = []
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     onboarding_completed: bool = False
