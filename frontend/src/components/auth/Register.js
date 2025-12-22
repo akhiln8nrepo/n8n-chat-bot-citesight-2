@@ -166,6 +166,20 @@ const Register = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Product/Service Description (Optional)
+                  </label>
+                  <textarea
+                    value={formData.product_description}
+                    onChange={(e) => setFormData({...formData, product_description: e.target.value})}
+                    rows={3}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Briefly describe what your product/service does and who it's for. This helps us generate better prompts."
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Optional: Add more context about your product to improve prompt accuracy</p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                     <Briefcase size={16} />
                     Industry *
