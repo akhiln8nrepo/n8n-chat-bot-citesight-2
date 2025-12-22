@@ -89,17 +89,19 @@ class Prompt(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     prompt: str
-    source: str  # ai_testing, reddit_mining, customer_surveys, keyword_conversion, competitor_analysis
-    intent: str  # information_seeking, recommendation_seeking, instructions, problem_solving, creative, research
-    business_value: int  # 0-100 scale
-    volume: int  # 0-100 scale
-    competition: int  # 0-100 scale (higher = more competition)
-    feasibility: int  # 0-100 scale
-    intent_score: int  # 0-100 scale (NEW 7th metric)
-    citation_potential: int  # 0-100 scale
-    brand_relevance: int  # 0-100 scale
-    overall_score: float  # Weighted composite score
+    source: str  # category_search, product_discovery, competitor_comparison, use_case, persona_based, problem_solution, feature_discovery, reddit_mining
+    intent: str  # informational, navigational, commercial_investigation, transactional, local, support
+    business_value: int  # 0-100 scale (25% weight)
+    volume: int  # 0-100 scale (15% weight)
+    competition: int  # 0-100 scale (higher = more competition, 10% weight inverted)
+    feasibility: int  # 0-100 scale (10% weight)
+    intent_score: int  # 0-100 scale (5% weight - conversion intent)
+    citation_potential: int  # 0-100 scale (15% weight)
+    brand_relevance: int  # 0-100 scale (20% weight)
+    overall_score: float  # Weighted composite score (0-100)
     rank: int
+    tier: str = ""  # TIER_1_CRITICAL, TIER_2_HIGH, TIER_3_MEDIUM, TIER_4_LOW
+    buyer_stage: str = ""  # awareness, consideration, decision, retention
     generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     week_number: int  # Week of year
 
