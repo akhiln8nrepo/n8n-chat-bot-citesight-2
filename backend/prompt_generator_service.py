@@ -421,7 +421,8 @@ Return ONLY a JSON array:
         
         except Exception as e:
             logger.error(f"Competitor prompts failed: {e}")
-            return self._get_fallback_prompts('competitor_analysis', industry, 5)
+            product_name = website_data.get('name', 'product')
+            return self._get_fallback_prompts('competitor_analysis', industry, product_name, 5)
     
     async def _categorize_and_rank_prompts(self, prompts: List[Dict], website_data: Dict) -> List[Dict]:
         """
