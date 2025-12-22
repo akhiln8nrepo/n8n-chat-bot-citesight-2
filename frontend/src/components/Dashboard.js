@@ -84,6 +84,13 @@ const Dashboard = () => {
 
   const getCategoryColor = (intent) => {
     const colors = {
+      'informational': 'bg-blue-100 text-blue-700',
+      'navigational': 'bg-gray-100 text-gray-700',
+      'commercial_investigation': 'bg-green-100 text-green-700',
+      'transactional': 'bg-purple-100 text-purple-700',
+      'local': 'bg-yellow-100 text-yellow-700',
+      'support': 'bg-orange-100 text-orange-700',
+      // Legacy
       'information_seeking': 'bg-blue-100 text-blue-700',
       'recommendation_seeking': 'bg-green-100 text-green-700',
       'instructions': 'bg-yellow-100 text-yellow-700',
@@ -96,8 +103,16 @@ const Dashboard = () => {
 
   const getSourceColor = (source) => {
     const colors = {
-      'ai_testing': '#3B82F6',
+      'category_search': '#3B82F6',
+      'product_discovery': '#8B5CF6',
+      'competitor_comparison': '#EF4444',
+      'use_case': '#10B981',
+      'persona_based': '#6366F1',
+      'problem_solution': '#F59E0B',
+      'feature_discovery': '#14B8A6',
       'reddit_mining': '#F97316',
+      // Legacy
+      'ai_testing': '#3B82F6',
       'customer_surveys': '#8B5CF6',
       'keyword_conversion': '#10B981',
       'competitor_analysis': '#EF4444'
