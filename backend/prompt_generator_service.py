@@ -150,12 +150,12 @@ Return ONLY valid JSON (no markdown, no explanations):
         
         try:
             response = completion(
-                model="openai/gpt-4o-mini",
+                model="openrouter/openai/gpt-4o-mini",  # Use openrouter/ prefix
                 messages=[{"role": "user", "content": prompt}],
+                api_base="https://openrouter.ai/api/v1",
                 api_key=OPENROUTER_API_KEY,
                 temperature=0.8,
-                max_tokens=800,
-                response_format={"type": "json_object"}
+                max_tokens=800
             )
             
             content = response.choices[0].message.content
@@ -171,8 +171,7 @@ Return ONLY valid JSON (no markdown, no explanations):
             data = json.loads(content.strip())
             prompts = data if isinstance(data, list) else data.get('prompts', [])
             
-            return [
-{
+            return [{
                 'prompt': p.get('prompt', ''),
                 'source': 'ai_testing',
                 'intent': p.get('intent', 'information_seeking')
