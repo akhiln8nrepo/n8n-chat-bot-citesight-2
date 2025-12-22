@@ -170,13 +170,21 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
         company_name=user_data.company_name,
         website_url=user_data.website_url,
         industry=user_data.industry,
+        product_description=user_data.product_description,
         competitors=user_data.competitors or []
     )
     
     await db.users.insert_one(user.model_dump())
     
     # Start onboarding process in background
-    background_tasks.add_task(onboard_user, user.id, user_data.website_url, user_data.industry, user_data.competitors)
+    background_tasks.add_task(
+        onboard_user, 
+        user.id, 
+        user_data.website_url, 
+        user_data.industry, 
+        user_data.product_description,
+        user_data.competitors
+    )
     
     # Create access token
     access_token = create_access_token({"user_id": user.id, "email": user.email})
