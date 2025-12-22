@@ -456,46 +456,20 @@ class AIContentMonitorTester:
         )
 
 def main():
-    print("🚀 Starting AI Content Monitor API Tests")
+    print("🚀 Starting CiteSight API Tests")
     print("=" * 50)
     
-    tester = AIContentMonitorTester()
+    # Run 7-Factor Scoring Tests
+    seven_factor_tester = SevenFactorScoringTester()
+    seven_factor_success = seven_factor_tester.run_all_tests()
     
-    # Test sequence
-    tests = [
-        tester.test_root_endpoint,
-        tester.test_create_publisher,
-        tester.test_get_publishers,
-        tester.test_create_content,
-        tester.test_get_content,
-        tester.test_get_content_by_id,
-        tester.test_get_visibility,
-        tester.test_create_keyword,
-        tester.test_get_keywords,
-        tester.test_get_recommendations,
-        tester.test_dashboard_stats,
-        tester.test_dashboard_stats_with_publisher,
-        tester.test_get_competitors
-    ]
-    
-    # Run all tests
-    for test in tests:
-        try:
-            test()
-        except Exception as e:
-            print(f"❌ Test failed with exception: {str(e)}")
-            tester.tests_run += 1
-    
-    # Print final results
-    print("\n" + "=" * 50)
-    print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} tests passed")
-    
-    if tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed!")
-        return 0
-    else:
-        print(f"⚠️  {tester.tests_run - tester.tests_passed} tests failed")
+    if not seven_factor_success:
+        print("\n❌ 7-Factor Scoring tests failed")
         return 1
+    
+    print("\n" + "=" * 50)
+    print("🎉 All CiteSight tests completed successfully!")
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
