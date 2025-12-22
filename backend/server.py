@@ -334,19 +334,24 @@ async def get_prompts(request: Request, authorization: str = Header(None)):
 
 @api_router.get("/prompts/stats")
 async def get_prompt_stats(authorization: str = Header(None)):
-    """Get prompt statistics for dashboard"""
+    """Get prompt statistics for dashboard with 7-factor metrics"""
     user = await get_current_user(authorization)
     
     total_prompts = await db.prompts.count_documents({"user_id": user['id']})
     
-    # Get average scores
+    # Get average scores for all 7 metrics
     pipeline = [
         {"$match": {"user_id": user['id']}},
         {"$group": {
             "_id": None,
             "avg_business_value": {"$avg": "$business_value"},
+            "avg_volume": {"$avg": "$volume"},
+            "avg_competition": {"$avg": "$competition"},
             "avg_feasibility": {"$avg": "$feasibility"},
-            "avg_citation_potential": {"$avg": "$citation_potential"}
+            "avg_intent_score": {"$avg": "$intent_score"},
+            "avg_citation_potential": {"$avg": "$citation_potential"},
+            "avg_brand_relevance": {"$avg": "$brand_relevance"},
+            "avg_overall_score": {"$avg": "$overall_score"}
         }}
     ]
     
@@ -360,12 +365,25 @@ async def get_prompt_stats(authorization: str = Header(None)):
     ]
     source_breakdown = await db.prompts.aggregate(source_pipeline).to_list(10)
     
+    # Get intent breakdown
+    intent_pipeline = [
+        {"$match": {"user_id": user['id']}},
+        {"$group": {"_id": "$intent", "count": {"$sum": 1}}}
+    ]
+    intent_breakdown = await db.prompts.aggregate(intent_pipeline).to_list(10)
+    
     return {
         "total_prompts": total_prompts,
         "avg_business_value": round(avg_stats.get('avg_business_value', 0), 1),
+        "avg_volume": round(avg_stats.get('avg_volume', 0), 1),
+        "avg_competition": round(avg_stats.get('avg_competition', 0), 1),
         "avg_feasibility": round(avg_stats.get('avg_feasibility', 0), 1),
+        "avg_intent_score": round(avg_stats.get('avg_intent_score', 0), 1),
         "avg_citation_potential": round(avg_stats.get('avg_citation_potential', 0), 1),
-        "source_breakdown": {item['_id']: item['count'] for item in source_breakdown}
+        "avg_brand_relevance": round(avg_stats.get('avg_brand_relevance', 0), 1),
+        "avg_overall_score": round(avg_stats.get('avg_overall_score', 0), 1),
+        "source_breakdown": {item['_id']: item['count'] for item in source_breakdown},
+        "intent_breakdown": {item['_id']: item['count'] for item in intent_breakdown}
     }
 
 @api_router.get("/onboarding/status")
