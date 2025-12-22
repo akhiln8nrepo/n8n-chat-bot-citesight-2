@@ -365,7 +365,8 @@ Return ONLY a JSON array:
         
         except Exception as e:
             logger.error(f"Keyword prompts failed: {e}")
-            return self._get_fallback_prompts('keyword_conversion', industry, 5)
+            product_name = website_data.get('name', 'product')
+            return self._get_fallback_prompts('keyword_conversion', industry, product_name, 5)
     
     async def _generate_competitor_prompts(self, competitors: List[str], industry: str, website_data: Dict) -> List[Dict]:
         """
