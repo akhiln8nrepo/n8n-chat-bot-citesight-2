@@ -111,42 +111,42 @@ const PromptMonitoring = () => {
   // Loading/Onboarding State
   if (!onboardingComplete) {
     return (
-      <div className=\"min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4\">
-        <div className=\"bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center\">
-          <div className=\"flex justify-center mb-6\">
-            <div className=\"relative\">
-              <Loader2 className=\"animate-spin text-blue-600\" size={64} />
-              <div className=\"absolute inset-0 flex items-center justify-center\">
-                <Search className=\"text-blue-600\" size={28} />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <Loader2 className="animate-spin text-blue-600" size={64} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Search className="text-blue-600" size={28} />
               </div>
             </div>
           </div>
           
-          <h2 className=\"text-2xl font-bold text-slate-900 mb-3\">Analyzing Your Website</h2>
-          <p className=\"text-slate-600 mb-6\">
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">Analyzing Your Website</h2>
+          <p className="text-slate-600 mb-6">
             We're crawling your website and generating 25 optimized prompts from 5 different sources...
           </p>
           
-          <div className=\"space-y-3 text-left\">
-            <div className=\"flex items-center gap-3 p-3 bg-blue-50 rounded-lg\">
-              <CheckCircle2 className=\"text-blue-600 flex-shrink-0\" size={20} />
-              <span className=\"text-sm text-slate-700\">Crawling website content</span>
+          <div className="space-y-3 text-left">
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+              <CheckCircle2 className="text-blue-600 flex-shrink-0" size={20} />
+              <span className="text-sm text-slate-700">Crawling website content</span>
             </div>
-            <div className=\"flex items-center gap-3 p-3 bg-blue-50 rounded-lg\">
-              <CheckCircle2 className=\"text-blue-600 flex-shrink-0\" size={20} />
-              <span className=\"text-sm text-slate-700\">Mining Reddit discussions</span>
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+              <CheckCircle2 className="text-blue-600 flex-shrink-0" size={20} />
+              <span className="text-sm text-slate-700">Mining Reddit discussions</span>
             </div>
-            <div className=\"flex items-center gap-3 p-3 bg-blue-50 rounded-lg\">
-              <CheckCircle2 className=\"text-blue-600 flex-shrink-0\" size={20} />
-              <span className=\"text-sm text-slate-700\">Analyzing competitors</span>
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+              <CheckCircle2 className="text-blue-600 flex-shrink-0" size={20} />
+              <span className="text-sm text-slate-700">Analyzing competitors</span>
             </div>
-            <div className=\"flex items-center gap-3 p-3 bg-blue-50 rounded-lg\">
-              <Loader2 className=\"animate-spin text-blue-600 flex-shrink-0\" size={20} />
-              <span className=\"text-sm text-slate-700\">Generating AI prompts...</span>
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+              <Loader2 className="animate-spin text-blue-600 flex-shrink-0" size={20} />
+              <span className="text-sm text-slate-700">Generating AI prompts...</span>
             </div>
           </div>
           
-          <p className=\"text-xs text-slate-500 mt-6\">This usually takes 30-60 seconds</p>
+          <p className="text-xs text-slate-500 mt-6">This usually takes 30-60 seconds</p>
         </div>
       </div>
     );
