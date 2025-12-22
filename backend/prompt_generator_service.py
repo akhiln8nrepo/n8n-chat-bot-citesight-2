@@ -245,15 +245,14 @@ Return ONLY valid JSON:
             
             content = response.choices[0].message.content
             
-            # Extract JSON
-            import re
-            if "```json" in content:
-                content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
-            elif "```" in content:
-                content = re.search(r'```\s*(.*?)\s*```', content, re.DOTALL).group(1)
+            # Use robust JSON parser
+            data = parse_llm_json(content)
+            if not data:
+                logger.error("Failed to parse JSON from Reddit response")
+                product_name = website_data.get('name', 'product')
+                return self._get_fallback_prompts('reddit_mining', industry, product_name, 5)
             
-            data = json.loads(content.strip())
-            prompts = data if isinstance(data, list) else data.get('prompts', [])
+            prompts = extract_prompts_from_response(data)
             
             return [{
                 'prompt': p.get('prompt', ''),
