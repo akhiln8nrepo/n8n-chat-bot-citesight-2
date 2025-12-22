@@ -198,7 +198,127 @@ class GEOPromptFrameworkTester:
         print(f"✅ All 8 expected sources present: {sorted(found_sources)}")
         return True
 
-    def run_all_tests(self):
+    def test_new_intent_classification(self):
+        """Verify prompts use new intent types"""
+        success, response = self.run_test(
+            "Verify New Intent Classification",
+            "GET",
+            "prompts",
+            200
+        )
+        
+        if not success or not response:
+            return False
+        
+        expected_intents = [
+            'informational', 'navigational', 'commercial_investigation',
+            'transactional', 'local', 'support'
+        ]
+        
+        found_intents = set()
+        for prompt in response:
+            intent = prompt.get('intent')
+            if intent:
+                found_intents.add(intent)
+        
+        print(f"   Found intents: {sorted(found_intents)}")
+        
+        # Check if we have at least some of the expected intents
+        valid_intents = found_intents.intersection(set(expected_intents))
+        if len(valid_intents) < 2:
+            print(f"❌ Too few valid intents found: {valid_intents}")
+            return False
+        
+        print(f"✅ Valid intents found: {sorted(valid_intents)}")
+        return True
+
+    def test_7_factor_scoring_system(self):
+        """Verify the 7-factor scoring system is working"""
+        success, response = self.run_test(
+            "Verify 7-Factor Scoring System",
+            "GET",
+            "prompts",
+            200
+        )
+        
+        if not success or not response:
+            return False
+        
+        # Check first prompt for all 7 factors
+        first_prompt = response[0]
+        required_factors = [
+            'business_value', 'volume', 'competition', 'feasibility',
+            'intent_score', 'citation_potential', 'brand_relevance', 'overall_score'
+        ]
+        
+        missing_factors = []
+        for factor in required_factors:
+            if factor not in first_prompt:
+                missing_factors.append(factor)
+        
+        if missing_factors:
+            print(f"❌ Missing scoring factors: {missing_factors}")
+            return False
+        
+        # Verify scoring ranges
+        for factor in required_factors[:-1]:  # Exclude overall_score
+            value = first_prompt.get(factor, 0)
+            if not (0 <= value <= 100):
+                print(f"❌ Factor {factor} out of range: {value}")
+                return False
+        
+        # Check tier classification
+        tier = first_prompt.get('tier', '')
+        valid_tiers = ['TIER_1_CRITICAL', 'TIER_2_HIGH', 'TIER_3_MEDIUM', 'TIER_4_LOW']
+        if tier not in valid_tiers:
+            print(f"❌ Invalid tier: {tier}")
+            return False
+        
+        # Check buyer stage
+        buyer_stage = first_prompt.get('buyer_stage', '')
+        valid_stages = ['awareness', 'consideration', 'decision', 'retention']
+        if buyer_stage not in valid_stages:
+            print(f"❌ Invalid buyer stage: {buyer_stage}")
+            return False
+        
+        print(f"✅ All 7 factors present with correct ranges")
+        print(f"   Sample: business_value={first_prompt['business_value']}, tier={tier}, buyer_stage={buyer_stage}")
+        return True
+
+    def test_stats_endpoint_comprehensive(self):
+        """Verify stats endpoint returns comprehensive 7-factor data"""
+        success, response = self.run_test(
+            "Verify Comprehensive Stats Endpoint",
+            "GET",
+            "prompts/stats",
+            200
+        )
+        
+        if not success or not response:
+            return False
+        
+        required_stats = [
+            'total_prompts', 'avg_business_value', 'avg_volume', 'avg_competition',
+            'avg_feasibility', 'avg_intent_score', 'avg_citation_potential',
+            'avg_brand_relevance', 'avg_overall_score', 'source_breakdown', 'intent_breakdown'
+        ]
+        
+        missing_stats = []
+        for stat in required_stats:
+            if stat not in response:
+                missing_stats.append(stat)
+        
+        if missing_stats:
+            print(f"❌ Missing stats: {missing_stats}")
+            return False
+        
+        print(f"✅ All comprehensive stats present")
+        print(f"   Total prompts: {response.get('total_prompts')}")
+        print(f"   Avg overall score: {response.get('avg_overall_score')}")
+        print(f"   Source breakdown: {response.get('source_breakdown')}")
+        print(f"   Intent breakdown: {response.get('intent_breakdown')}")
+        
+        return True
         """Run complete 7-factor scoring test flow"""
         print("🚀 Starting 7-Factor Scoring Algorithm Tests")
         print("=" * 60)
