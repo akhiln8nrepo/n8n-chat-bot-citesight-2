@@ -511,28 +511,32 @@ Return ONLY a JSON array:
         return score
     
     def _calculate_business_value(self, prompt_data: Dict, website_data: Dict) -> int:
-        """Calculate business value score (1-10 scale)"""
+        """Calculate business value score (0-100 scale)"""
         text = prompt_data.get('prompt', '').lower()
-        score = 5  # Base score
+        score = 50  # Base score
         
-        # High business value indicators
-        if any(word in text for word in ['pricing', 'cost', 'buy', 'purchase', 'trial', 'demo']):
-            score += 3
+        # High business value indicators (+15-20 each)
+        if any(word in text for word in ['pricing', 'cost', 'buy', 'purchase']):
+            score += 25
+        if any(word in text for word in ['trial', 'demo', 'signup', 'start']):
+            score += 20
         if any(word in text for word in ['best', 'top', 'recommend']):
-            score += 2
-        if any(word in text for word in ['vs', 'compare', 'alternative']):
-            score += 2
+            score += 15
+        if any(word in text for word in ['vs', 'compare', 'alternative', 'switch']):
+            score += 15
         
         # Brand-specific queries have high business value
         product_name = website_data.get('name', '').lower()
         if product_name and product_name in text:
-            score += 1
+            score += 10
         
         # Low business value indicators
-        if any(word in text for word in ['free', 'what is', 'define']):
-            score -= 1
+        if any(word in text for word in ['free', 'what is', 'define', 'history']):
+            score -= 15
+        if any(word in text for word in ['learn', 'understand', 'explain']):
+            score -= 10
         
-        return max(1, min(10, score))
+        return max(0, min(100, score))
     
     def _estimate_volume(self, prompt_data: Dict) -> int:
         """Estimate search volume (1-10 scale)"""
