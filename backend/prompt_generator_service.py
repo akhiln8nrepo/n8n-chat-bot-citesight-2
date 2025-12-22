@@ -539,24 +539,37 @@ Return ONLY a JSON array:
         return max(0, min(100, score))
     
     def _estimate_volume(self, prompt_data: Dict) -> int:
-        """Estimate search volume (1-10 scale)"""
+        """Estimate search volume (0-100 scale)"""
         text = prompt_data.get('prompt', '').lower()
-        score = 5  # Base score
+        score = 50  # Base score
         
-        # High volume indicators
-        if any(word in text for word in ['best', 'how to', 'what is']):
-            score += 2
+        # High volume indicators (common query patterns)
+        if any(word in text for word in ['best', 'top', 'how to']):
+            score += 25
+        if any(word in text for word in ['what is', 'what are', 'guide']):
+            score += 20
+        if any(word in text for word in ['2024', '2025', 'latest']):
+            score += 10
         
         # Generic category queries = high volume
         source = prompt_data.get('source', '')
         if source in ['keyword_conversion', 'ai_testing']:
-            score += 2
+            score += 15
         
-        # Brand-specific = lower volume
-        if 'competitor' in source or 'reddit' in source:
-            score -= 1
+        # Specific/niche queries = lower volume
+        if 'competitor' in source:
+            score -= 10
+        if any(word in text for word in ['specific', 'niche', 'custom']):
+            score -= 15
         
-        return max(1, min(10, score))
+        # Long-tail queries have lower volume
+        word_count = len(text.split())
+        if word_count > 10:
+            score -= 10
+        elif word_count < 5:
+            score += 10
+        
+        return max(0, min(100, score))
     
     def _estimate_competition(self, prompt_data: Dict) -> int:
         """Estimate competition level (1-10, LOWER is better/easier)"""
