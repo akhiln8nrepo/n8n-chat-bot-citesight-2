@@ -318,8 +318,8 @@ const PromptMonitoring = () => {
                 </div>
               </div>
 
-              {/* Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-4 pt-4 border-t border-slate-100">
+              {/* Metrics - 7 Factor Scoring */}
+              <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mt-4 pt-4 border-t border-slate-100">
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Business Value</p>
                   <div className="flex items-center gap-2">
@@ -369,6 +369,19 @@ const PromptMonitoring = () => {
                       />
                     </div>
                     <span className="text-sm font-medium text-slate-900">{prompt.feasibility}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Intent</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="bg-yellow-500 h-2 rounded-full" 
+                        style={{width: `${prompt.intent_score || 50}%`}}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{prompt.intent_score || 50}</span>
                   </div>
                 </div>
 
