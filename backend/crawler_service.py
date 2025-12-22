@@ -106,7 +106,7 @@ class CrawlerService:
             soup = BeautifulSoup(html, 'html.parser')
             headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
             return headings[:10]
-        except:
+        except Exception:
             return []
     
     async def _crawl_with_custom(self, url: str, max_pages: int) -> Dict:
