@@ -228,7 +228,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "CiteSight Phase 1 Complete Flow Testing"
+    - "7-Factor Scoring Algorithm Update"
+    - "Intent Score as 7th Metric"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
