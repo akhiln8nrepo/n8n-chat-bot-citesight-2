@@ -12,7 +12,7 @@ class SevenFactorScoringTester:
         self.tests_passed = 0
         self.access_token = None
         self.user_id = None
-        self.test_email = f"test7factor@citesight.com"
+        self.test_email = f"test7factor{int(time.time())}@citesight.com"
         
     def run_test(self, name, method, endpoint, expected_status, data=None, params=None, headers=None):
         """Run a single API test"""
