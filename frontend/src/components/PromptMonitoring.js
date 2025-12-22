@@ -176,19 +176,35 @@ const PromptMonitoring = () => {
 
   const getSourceLabel = (source) => {
     const labels = {
-      'ai_testing': 'AI TEST',
+      'category_search': 'CATEGORY',
+      'product_discovery': 'PRODUCT',
+      'competitor_comparison': 'VS COMP',
+      'use_case': 'USE CASE',
+      'persona_based': 'PERSONA',
+      'problem_solution': 'PROBLEM',
+      'feature_discovery': 'FEATURE',
       'reddit_mining': 'REDDIT',
+      // Legacy mappings
+      'ai_testing': 'AI TEST',
       'customer_surveys': 'SURVEY',
       'keyword_conversion': 'KEYWORD',
       'competitor_analysis': 'COMPET'
     };
-    return labels[source] || source?.toUpperCase()?.slice(0, 6);
+    return labels[source] || source?.toUpperCase()?.slice(0, 8);
   };
 
   const getSourceColor = (source) => {
     const colors = {
-      'ai_testing': 'bg-blue-50 text-blue-600',
+      'category_search': 'bg-blue-50 text-blue-600',
+      'product_discovery': 'bg-purple-50 text-purple-600',
+      'competitor_comparison': 'bg-red-50 text-red-600',
+      'use_case': 'bg-green-50 text-green-600',
+      'persona_based': 'bg-indigo-50 text-indigo-600',
+      'problem_solution': 'bg-yellow-50 text-yellow-700',
+      'feature_discovery': 'bg-teal-50 text-teal-600',
       'reddit_mining': 'bg-orange-50 text-orange-600',
+      // Legacy mappings
+      'ai_testing': 'bg-blue-50 text-blue-600',
       'customer_surveys': 'bg-purple-50 text-purple-600',
       'keyword_conversion': 'bg-green-50 text-green-600',
       'competitor_analysis': 'bg-red-50 text-red-600'
