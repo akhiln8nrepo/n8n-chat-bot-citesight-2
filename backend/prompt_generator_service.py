@@ -238,11 +238,11 @@ Return ONLY valid JSON:
 """
             
             response = completion(
-                model="openai/gpt-4o-mini",
+                model="openrouter/openai/gpt-4o-mini",  # Use openrouter/ prefix
                 messages=[{"role": "user", "content": prompt}],
+                api_base="https://openrouter.ai/api/v1",
                 api_key=OPENROUTER_API_KEY,
-                temperature=0.8,
-                response_format={"type": "json_object"}
+                temperature=0.8
             )
             
             content = response.choices[0].message.content
