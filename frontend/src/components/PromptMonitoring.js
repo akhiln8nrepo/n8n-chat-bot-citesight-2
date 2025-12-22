@@ -154,8 +154,8 @@ const PromptMonitoring = () => {
 
   if (loading) {
     return (
-      <div className=\"flex items-center justify-center h-96\">
-        <Loader2 className=\"animate-spin text-blue-600\" size={48} />
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
       </div>
     );
   }
