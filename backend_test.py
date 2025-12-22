@@ -164,37 +164,38 @@ class GEOPromptFrameworkTester:
         print(f"✅ Good relevance: {relevance_percentage:.1f}% of prompts are sportswear-related")
         return True
 
-    def test_stats_endpoint_7_metrics(self):
-        """Verify stats endpoint returns all 7 metrics including intent breakdown"""
+    def test_new_prompt_sources(self):
+        """Verify prompts come from the 8 new sources"""
         success, response = self.run_test(
-            "Get Stats with 7 Metrics",
+            "Verify New Prompt Sources",
             "GET",
-            "prompts/stats",
+            "prompts",
             200
         )
         
         if not success or not response:
             return False
-            
-        required_stats = [
-            'avg_business_value', 'avg_volume', 'avg_competition', 'avg_feasibility',
-            'avg_intent_score', 'avg_citation_potential', 'avg_brand_relevance',
-            'intent_breakdown'
+        
+        expected_sources = [
+            'category_search', 'product_discovery', 'competitor_comparison',
+            'use_case', 'persona_based', 'problem_solution', 
+            'feature_discovery', 'reddit_mining'
         ]
         
-        missing_stats = []
-        for stat in required_stats:
-            if stat not in response:
-                missing_stats.append(stat)
-                
-        if missing_stats:
-            print(f"❌ Missing stats: {missing_stats}")
-            return False
-            
-        print(f"✅ All 7 metric stats present including intent_breakdown")
-        print(f"   avg_intent_score: {response.get('avg_intent_score')}")
-        print(f"   intent_breakdown: {response.get('intent_breakdown')}")
+        found_sources = set()
+        for prompt in response:
+            source = prompt.get('source')
+            if source:
+                found_sources.add(source)
         
+        print(f"   Found sources: {sorted(found_sources)}")
+        
+        missing_sources = set(expected_sources) - found_sources
+        if missing_sources:
+            print(f"❌ Missing sources: {missing_sources}")
+            return False
+        
+        print(f"✅ All 8 expected sources present: {sorted(found_sources)}")
         return True
 
     def run_all_tests(self):
