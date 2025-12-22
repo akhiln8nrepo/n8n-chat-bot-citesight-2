@@ -291,17 +291,19 @@ async def onboard_user(user_id: str, website_url: str, industry: str, product_de
             prompt = Prompt(
                 user_id=user_id,
                 prompt=prompt_data.get('prompt', ''),
-                source=prompt_data.get('source', ''),
-                intent=prompt_data.get('intent', ''),
-                business_value=prompt_data.get('business_value', 0),
-                volume=prompt_data.get('volume', 0),
-                competition=prompt_data.get('competition', 0),
-                feasibility=prompt_data.get('feasibility', 0),
-                intent_score=prompt_data.get('intent_score', 50),  # NEW 7th metric
-                citation_potential=prompt_data.get('citation_potential', 0),
-                brand_relevance=prompt_data.get('brand_relevance', 0),
-                overall_score=prompt_data.get('overall_score', 0),
+                source=prompt_data.get('source', 'category_search'),
+                intent=prompt_data.get('intent', 'informational'),
+                business_value=prompt_data.get('business_value', 50),
+                volume=prompt_data.get('volume', 50),
+                competition=prompt_data.get('competition', 50),
+                feasibility=prompt_data.get('feasibility', 50),
+                intent_score=prompt_data.get('intent_score', 50),
+                citation_potential=prompt_data.get('citation_potential', 50),
+                brand_relevance=prompt_data.get('brand_relevance', 50),
+                overall_score=prompt_data.get('overall_score', 50.0),
                 rank=prompt_data.get('rank', 0),
+                tier=prompt_data.get('tier', 'TIER_3_MEDIUM'),
+                buyer_stage=prompt_data.get('buyerStage', 'awareness'),
                 week_number=week_number
             )
             await db.prompts.insert_one(prompt.model_dump())
