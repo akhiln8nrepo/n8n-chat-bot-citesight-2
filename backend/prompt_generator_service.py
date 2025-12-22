@@ -509,11 +509,9 @@ class PromptPatternGenerator:
         
         # Source 7: Feature/Technology prompts
         for feature in features[:5]:
-            prompts.extend([
-                {"prompt": f"What is {feature}?", "source": "feature_discovery", "feature": feature},
-                {"prompt": f"{category} with {feature}", "source": "feature_discovery", "feature": feature} 
-                for category in categories[:1]
-            ])
+            prompts.append({"prompt": f"What is {feature}?", "source": "feature_discovery", "feature": feature})
+            for category in categories[:1]:
+                prompts.append({"prompt": f"{category} with {feature}", "source": "feature_discovery", "feature": feature})
         
         # Remove duplicates
         seen = set()
