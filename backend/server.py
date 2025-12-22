@@ -62,6 +62,7 @@ class UserRegister(BaseModel):
     company_name: str
     website_url: str
     industry: str
+    product_description: Optional[str] = None  # Optional product description
     competitors: Optional[List[str]] = []
 
 class UserLogin(BaseModel):
