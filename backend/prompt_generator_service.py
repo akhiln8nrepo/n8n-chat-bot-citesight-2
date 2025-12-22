@@ -4,6 +4,8 @@ Generates 25 prompts from 5 sources: AI Testing, Reddit, Surveys, Keywords, Comp
 """
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 import logging
 import json
 from typing import Dict, List
@@ -11,6 +13,10 @@ import asyncio
 from litellm import completion
 from tavily import TavilyClient
 import random
+
+# Load environment variables
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
 logger = logging.getLogger(__name__)
 
