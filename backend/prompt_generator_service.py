@@ -152,28 +152,53 @@ Return ONLY valid JSON (no markdown, no explanations):
         """
         logger.info("Generating Reddit mining prompts")
         
+        product_name = website_data.get('name', 'product')
+        key_topics = website_data.get('key_topics', [])
+        
         try:
-            # Search Reddit discussions via Tavily
-            query = f"{industry} site:reddit.com questions problems"
-            results = self.tavily_client.search(query, max_results=5)
+            # Search Reddit discussions via Tavily with specific queries
+            search_queries = [
+                f"{industry} problems site:reddit.com",
+                f"best {industry} tools site:reddit.com",
+                f"{' '.join(key_topics[:2])} recommendations site:reddit.com"
+            ]
             
-            # Extract questions from Reddit
-            reddit_data = [{
-                'title': r.get('title', ''),
-                'content': r.get('content', '')[:200]
-            } for r in results.get('results', [])]
+            reddit_discussions = []
+            for query in search_queries[:2]:  # Limit to 2 searches to save API calls
+                try:
+                    results = self.tavily_client.search(query, max_results=3)
+                    reddit_discussions.extend([{
+                        'title': r.get('title', ''),
+                        'content': r.get('content', '')[:300]
+                    } for r in results.get('results', [])])
+                except Exception as e:
+                    logger.error(f"Tavily search failed for {query}: {e}")
+            
+            if not reddit_discussions:
+                return self._get_fallback_prompts('reddit_mining', industry, product_name, 5)
             
             # Use AI to convert Reddit discussions into prompts
             prompt = f"""
-Analyze these Reddit discussions about {industry}:
+Based on these REAL Reddit discussions about {industry}, generate 5 user prompts.
 
-{json.dumps(reddit_data, indent=2)}
+Product Context: {product_name} in {industry} industry
+Key Topics: {', '.join(key_topics[:5])}
 
-Generate 5 natural user prompts based on common questions/problems discussed on Reddit.
+Reddit Discussions:
+{json.dumps(reddit_discussions[:5], indent=2)}
 
-Return ONLY a JSON array:
+Generate 5 prompts that:
+1. Address actual problems/questions discussed on Reddit
+2. Are natural questions users would ask AI assistants
+3. Could lead to {product_name} being relevant
+4. Reflect real user pain points and needs
+
+Categorize each by intent:
+- information_seeking, recommendation_seeking, instructions, problem_solving, research, creative
+
+Return ONLY valid JSON:
 [
-  {{"prompt": "question", "intent": "problem_solving|information_seeking|recommendation_seeking"}}
+  {{"prompt": "question", "intent": "intent_type"}}
 ]
 """
             
@@ -181,11 +206,20 @@ Return ONLY a JSON array:
                 model="openai/gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}],
                 api_key=OPENROUTER_API_KEY,
+                temperature=0.8,
                 response_format={"type": "json_object"}
             )
             
             content = response.choices[0].message.content
-            data = json.loads(content)
+            
+            # Extract JSON
+            import re
+            if "```json" in content:
+                content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
+            elif "```" in content:
+                content = re.search(r'```\s*(.*?)\s*```', content, re.DOTALL).group(1)
+            
+            data = json.loads(content.strip())
             prompts = data if isinstance(data, list) else data.get('prompts', [])
             
             return [{
@@ -196,7 +230,7 @@ Return ONLY a JSON array:
         
         except Exception as e:
             logger.error(f"Reddit prompts failed: {e}")
-            return self._get_fallback_prompts('reddit_mining', industry, 5)
+            return self._get_fallback_prompts('reddit_mining', industry, product_name, 5)
     
     async def _generate_survey_prompts(self, industry: str, website_data: Dict) -> List[Dict]:
         """
