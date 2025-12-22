@@ -255,8 +255,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "7-Factor Scoring Algorithm Update" 
-    - "Intent Score as 7th Metric"
+    - "New UI Wireframes Implementation - GEO Prompt Monitor Redesign"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
