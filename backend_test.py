@@ -119,10 +119,10 @@ class GEOPromptFrameworkTester:
         print(f"❌ Onboarding did not complete within {max_wait_time} seconds")
         return False
 
-    def test_prompts_have_7_metrics(self):
-        """Verify prompts have all 7 metrics including intent_score"""
+    def test_sportswear_prompts_relevance(self):
+        """Verify prompts are relevant to sportswear/athletic apparel industry"""
         success, response = self.run_test(
-            "Get Prompts with 7 Metrics",
+            "Get Sportswear-Relevant Prompts",
             "GET",
             "prompts", 
             200
@@ -134,37 +134,34 @@ class GEOPromptFrameworkTester:
         if not isinstance(response, list) or len(response) == 0:
             print("❌ No prompts found")
             return False
-            
-        # Check first prompt for all 7 metrics
-        first_prompt = response[0]
-        required_metrics = [
-            'business_value', 'volume', 'competition', 'feasibility', 
-            'intent_score', 'citation_potential', 'brand_relevance', 'overall_score'
+        
+        print(f"✅ Generated {len(response)} prompts")
+        
+        # Check for sportswear-relevant prompts
+        sportswear_keywords = [
+            'running shoes', 'athletic', 'sportswear', 'sneakers', 'football boots',
+            'adidas', 'nike', 'puma', 'under armour', 'shoes', 'footwear', 'apparel'
         ]
         
-        missing_metrics = []
-        for metric in required_metrics:
-            if metric not in first_prompt:
-                missing_metrics.append(metric)
+        relevant_prompts = []
+        for prompt in response:
+            prompt_text = prompt.get('prompt', '').lower()
+            if any(keyword in prompt_text for keyword in sportswear_keywords):
+                relevant_prompts.append(prompt)
         
-        if missing_metrics:
-            print(f"❌ Missing metrics: {missing_metrics}")
-            return False
-            
-        # Verify all values are 0-100 scale
-        scale_issues = []
-        for metric in required_metrics[:-1]:  # Exclude overall_score which can be float
-            value = first_prompt.get(metric, 0)
-            if not (0 <= value <= 100):
-                scale_issues.append(f"{metric}: {value}")
-                
-        if scale_issues:
-            print(f"❌ Values not in 0-100 scale: {scale_issues}")
-            return False
-            
-        print(f"✅ All 7 metrics present with correct scale (0-100)")
-        print(f"   Sample metrics: business_value={first_prompt['business_value']}, intent_score={first_prompt['intent_score']}")
+        relevance_percentage = (len(relevant_prompts) / len(response)) * 100
+        print(f"   Sportswear relevance: {relevance_percentage:.1f}% ({len(relevant_prompts)}/{len(response)} prompts)")
         
+        # Show sample relevant prompts
+        print("   Sample relevant prompts:")
+        for i, prompt in enumerate(relevant_prompts[:5]):
+            print(f"     {i+1}. {prompt.get('prompt')}")
+        
+        if relevance_percentage < 40:
+            print(f"❌ Low relevance: Only {relevance_percentage:.1f}% of prompts are sportswear-related")
+            return False
+        
+        print(f"✅ Good relevance: {relevance_percentage:.1f}% of prompts are sportswear-related")
         return True
 
     def test_stats_endpoint_7_metrics(self):
