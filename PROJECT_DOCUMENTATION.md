@@ -220,7 +220,7 @@ EMERGENT_LLM_KEY=sk-emergent-eB71bBd312f376b820
 
 ### Frontend (.env)
 ```
-REACT_APP_BACKEND_URL=https://publisher-hub-4.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://promptr-3.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 REACT_APP_ENABLE_VISUAL_EDITS=false
 ENABLE_HEALTH_CHECK=false
@@ -320,7 +320,7 @@ python3 /app/backend_test.py
 ## Deployment
 
 Platform is deployed on Emergent's infrastructure:
-- **URL**: https://publisher-hub-4.preview.emergentagent.com
+- **URL**: https://promptr-3.preview.emergentagent.com
 - **Backend**: Port 8001 (internal), proxied via Kubernetes ingress
 - **Frontend**: Port 3000 (internal)
 - **MongoDB**: Local instance on port 27017

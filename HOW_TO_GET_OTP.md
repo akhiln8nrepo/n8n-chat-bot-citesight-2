@@ -7,7 +7,7 @@ In development, email and SMS are mocked (not actually sent). You need to retrie
 
 ### ✅ Method 1: Use the "Get My OTP Code" Button (EASIEST)
 
-1. **Register** at: https://publisher-hub-4.preview.emergentagent.com/auth/register
+1. **Register** at: https://promptr-3.preview.emergentagent.com/auth/register
 2. You'll be redirected to the **Verify OTP** page
 3. Look for the **yellow box** that says "📝 Development Mode"
 4. Click the **"Get My OTP Code"** button
@@ -25,7 +25,7 @@ Register → Verify Page → Yellow Box → Click "Get My OTP Code" → OTP Auto
 
 **Step 1: Register a user**
 ```bash
-curl -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/register \
+curl -X POST https://promptr-3.preview.emergentagent.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "John",
@@ -39,10 +39,10 @@ curl -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/register
 **Step 2: Get OTP codes**
 ```bash
 # Using email
-curl "https://publisher-hub-4.preview.emergentagent.com/api/auth/dev/get-otp/john@example.com"
+curl "https://promptr-3.preview.emergentagent.com/api/auth/dev/get-otp/john@example.com"
 
 # OR using phone
-curl "https://publisher-hub-4.preview.emergentagent.com/api/auth/dev/get-otp/%2B1234567890"
+curl "https://promptr-3.preview.emergentagent.com/api/auth/dev/get-otp/%2B1234567890"
 ```
 
 **Response:**
@@ -61,7 +61,7 @@ curl "https://publisher-hub-4.preview.emergentagent.com/api/auth/dev/get-otp/%2B
 **Step 3: Use the OTP to verify**
 ```bash
 # Verify with email OTP
-curl -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/verify-otp \
+curl -X POST https://promptr-3.preview.emergentagent.com/api/auth/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "identifier": "john@example.com",
@@ -70,7 +70,7 @@ curl -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/verify-o
   }'
 
 # OR verify with SMS OTP
-curl -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/verify-otp \
+curl -X POST https://promptr-3.preview.emergentagent.com/api/auth/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "identifier": "+1234567890",
@@ -112,7 +112,7 @@ Valid for: 10 minutes
 ### Step-by-Step:
 
 1. **Go to Registration**
-   - Visit: https://publisher-hub-4.preview.emergentagent.com/auth/register
+   - Visit: https://promptr-3.preview.emergentagent.com/auth/register
 
 2. **Fill the Form**
    ```
@@ -136,7 +136,7 @@ Valid for: 10 minutes
    - Success! You can now login
 
 6. **Login**
-   - Visit: https://publisher-hub-4.preview.emergentagent.com/auth/login
+   - Visit: https://promptr-3.preview.emergentagent.com/auth/login
    - Use your email/phone and password
 
 ---
@@ -179,7 +179,7 @@ Here's a complete test you can run:
 
 # 1. Register
 echo "1. Registering user..."
-curl -s -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/register \
+curl -s -X POST https://promptr-3.preview.emergentagent.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "Test",
@@ -191,14 +191,14 @@ curl -s -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/regis
 
 echo -e "\n2. Getting OTP codes..."
 sleep 2
-OTP_RESPONSE=$(curl -s "https://publisher-hub-4.preview.emergentagent.com/api/auth/dev/get-otp/test123@example.com")
+OTP_RESPONSE=$(curl -s "https://promptr-3.preview.emergentagent.com/api/auth/dev/get-otp/test123@example.com")
 echo $OTP_RESPONSE | jq
 
 EMAIL_OTP=$(echo $OTP_RESPONSE | jq -r '.email_otp')
 echo -e "\n3. Email OTP: $EMAIL_OTP"
 
 echo -e "\n4. Verifying with OTP..."
-curl -s -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/verify-otp \
+curl -s -X POST https://promptr-3.preview.emergentagent.com/api/auth/verify-otp \
   -H "Content-Type: application/json" \
   -d "{
     \"identifier\": \"test123@example.com\",
@@ -207,7 +207,7 @@ curl -s -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/verif
   }" | jq
 
 echo -e "\n5. Logging in..."
-curl -s -X POST https://publisher-hub-4.preview.emergentagent.com/api/auth/login \
+curl -s -X POST https://promptr-3.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "identifier": "test123@example.com",

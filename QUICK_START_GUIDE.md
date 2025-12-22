@@ -10,7 +10,7 @@ The keyword monitoring and recommendations features are fully implemented and wo
 
 ### Step 1: Create an Account or Login
 
-1. Go to: https://publisher-hub-4.preview.emergentagent.com/
+1. Go to: https://promptr-3.preview.emergentagent.com/
 2. Click **"Get Started"** or **"Sign In"**
 3. If you don't have an account:
    - Click "Register here"
@@ -22,7 +22,7 @@ The keyword monitoring and recommendations features are fully implemented and wo
 
 1. After login, you'll be on the Dashboard
 2. Click **"Content"** in the left sidebar navigation
-   - OR go directly to: `https://publisher-hub-4.preview.emergentagent.com/content`
+   - OR go directly to: `https://promptr-3.preview.emergentagent.com/content`
 
 ### Step 3: Add Content (If you don't have any)
 
@@ -178,10 +178,10 @@ After clicking Generate:
 If you want to skip navigation:
 
 1. **Content Management**: 
-   `https://publisher-hub-4.preview.emergentagent.com/content`
+   `https://promptr-3.preview.emergentagent.com/content`
 
 2. **Content Detail (replace {id} with actual content ID)**:
-   `https://publisher-hub-4.preview.emergentagent.com/content/{contentId}`
+   `https://promptr-3.preview.emergentagent.com/content/{contentId}`
 
 3. **Get Content ID**: Login, go to Content page, and look at the URL when you click Optimize
 
@@ -205,12 +205,12 @@ If you want to skip navigation:
 
 To verify the backend is working, you can check these endpoints directly:
 
-1. **Templates**: https://publisher-hub-4.preview.emergentagent.com/api/templates
+1. **Templates**: https://promptr-3.preview.emergentagent.com/api/templates
    - Should return JSON with template names
 
 2. **Check if services are running**:
    ```bash
-   curl https://publisher-hub-4.preview.emergentagent.com/api/
+   curl https://promptr-3.preview.emergentagent.com/api/
    ```
 
 ---
