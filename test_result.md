@@ -243,7 +243,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "7-Factor Scoring Algorithm Update"
+    - "7-Factor Scoring Algorithm Update" 
     - "Intent Score as 7th Metric"
   stuck_tasks: []
   test_all: false
