@@ -270,7 +270,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "New UI Wireframes Implementation - GEO Prompt Monitor Redesign"
+    - "7-Layer GEO Prompt Generation Framework Implementation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
