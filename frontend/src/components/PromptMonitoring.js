@@ -163,253 +163,253 @@ const PromptMonitoring = () => {
   const filteredPrompts = getFilteredPrompts();
 
   return (
-    <div className=\"space-y-6\">
-      {/* Header */}
-      <div className=\"flex items-center justify-between\">
-        <div>
-          <h1 className=\"text-3xl font-bold text-slate-900\">Prompt Monitoring</h1>
-          <p className=\"text-slate-600 mt-1\">25 AI-optimized prompts updated weekly</p>
-        </div>
-        <button
-          onClick={fetchPrompts}
-          className=\"flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors\"
-        >
-          <RefreshCw size={18} />
-          Refresh
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className=\"grid grid-cols-1 md:grid-cols-4 gap-4\">
-        <div className=\"bg-white rounded-xl p-6 border border-slate-200\">
-          <div className=\"flex items-center gap-3 mb-2\">
-            <Target className=\"text-blue-600\" size={24} />
-            <span className=\"text-sm text-slate-600\">Total Prompts</span>
-          </div>
-          <p className=\"text-3xl font-bold text-slate-900\">{prompts.length}</p>
-        </div>
-
-        <div className=\"bg-white rounded-xl p-6 border border-slate-200\">
-          <div className=\"flex items-center gap-3 mb-2\">
-            <Award className=\"text-green-600\" size={24} />
-            <span className=\"text-sm text-slate-600\">Avg Business Value</span>
-          </div>
-          <p className=\"text-3xl font-bold text-slate-900\">
-            {prompts.length > 0 ? Math.round(prompts.reduce((sum, p) => sum + p.business_value, 0) / prompts.length) : 0}
-          </p>
-        </div>
-
-        <div className=\"bg-white rounded-xl p-6 border border-slate-200\">
-          <div className=\"flex items-center gap-3 mb-2\">
-            <TrendingUp className=\"text-purple-600\" size={24} />
-            <span className=\"text-sm text-slate-600\">Avg Feasibility</span>
-          </div>
-          <p className=\"text-3xl font-bold text-slate-900\">
-            {prompts.length > 0 ? Math.round(prompts.reduce((sum, p) => sum + p.feasibility, 0) / prompts.length) : 0}
-          </p>
-        </div>
-
-        <div className=\"bg-white rounded-xl p-6 border border-slate-200\">
-          <div className=\"flex items-center gap-3 mb-2\">
-            <BarChart3 className=\"text-orange-600\" size={24} />
-            <span className=\"text-sm text-slate-600\">Citation Potential</span>
-          </div>
-          <p className=\"text-3xl font-bold text-slate-900\">
-            {prompts.length > 0 ? Math.round(prompts.reduce((sum, p) => sum + p.citation_potential, 0) / prompts.length) : 0}
-          </p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className=\"bg-white rounded-xl p-6 border border-slate-200\">
-        <div className=\"flex items-center gap-2 mb-4\">
-          <Filter size={20} className=\"text-slate-600\" />
-          <h3 className=\"text-lg font-semibold text-slate-900\">Filters</h3>
-        </div>
-
-        <div className=\"grid grid-cols-1 md:grid-cols-3 gap-4\">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <label className=\"block text-sm font-medium text-slate-700 mb-2\">Source</label>
-            <select
-              value={filters.source}
-              onChange={(e) => setFilters({...filters, source: e.target.value})}
-              className=\"w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500\"
-            >
-              <option value=\"all\">All Sources</option>
-              <option value=\"ai_testing\">AI Testing</option>
-              <option value=\"reddit_mining\">Reddit Mining</option>
-              <option value=\"customer_surveys\">Customer Surveys</option>
-              <option value=\"keyword_conversion\">Keyword Conversion</option>
-              <option value=\"competitor_analysis\">Competitor Analysis</option>
-            </select>
+            <h1 className="text-3xl font-bold text-slate-900">Prompt Monitoring</h1>
+            <p className="text-slate-600 mt-1">25 AI-optimized prompts updated weekly</p>
+          </div>
+          <button
+            onClick={fetchPrompts}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <RefreshCw size={18} />
+            Refresh
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-2">
+              <Target className="text-blue-600" size={24} />
+              <span className="text-sm text-slate-600">Total Prompts</span>
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{prompts.length}</p>
           </div>
 
-          <div>
-            <label className=\"block text-sm font-medium text-slate-700 mb-2\">Intent</label>
-            <select
-              value={filters.intent}
-              onChange={(e) => setFilters({...filters, intent: e.target.value})}
-              className=\"w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500\"
-            >
-              <option value=\"all\">All Intents</option>
-              <option value=\"information_seeking\">Information Seeking</option>
-              <option value=\"recommendation_seeking\">Recommendation</option>
-              <option value=\"instructions\">Instructions</option>
-              <option value=\"problem_solving\">Problem Solving</option>
-              <option value=\"creative\">Creative</option>
-              <option value=\"research\">Research</option>
-            </select>
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-2">
+              <Award className="text-green-600" size={24} />
+              <span className="text-sm text-slate-600">Avg Business Value</span>
+            </div>
+            <p className="text-3xl font-bold text-slate-900">
+              {prompts.length > 0 ? Math.round(prompts.reduce((sum, p) => sum + p.business_value, 0) / prompts.length) : 0}
+            </p>
           </div>
 
-          <div>
-            <label className=\"block text-sm font-medium text-slate-700 mb-2\">
-              Min Business Value: {filters.minBusinessValue}
-            </label>
-            <input
-              type=\"range\"
-              min=\"0\"
-              max=\"100\"
-              value={filters.minBusinessValue}
-              onChange={(e) => setFilters({...filters, minBusinessValue: parseInt(e.target.value)})}
-              className=\"w-full\"
-            />
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-purple-600" size={24} />
+              <span className="text-sm text-slate-600">Avg Feasibility</span>
+            </div>
+            <p className="text-3xl font-bold text-slate-900">
+              {prompts.length > 0 ? Math.round(prompts.reduce((sum, p) => sum + p.feasibility, 0) / prompts.length) : 0}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-2">
+              <BarChart3 className="text-orange-600" size={24} />
+              <span className="text-sm text-slate-600">Citation Potential</span>
+            </div>
+            <p className="text-3xl font-bold text-slate-900">
+              {prompts.length > 0 ? Math.round(prompts.reduce((sum, p) => sum + p.citation_potential, 0) / prompts.length) : 0}
+            </p>
           </div>
         </div>
 
-        <div className=\"mt-4 flex items-center justify-between\">
-          <p className=\"text-sm text-slate-600\">
-            Showing {filteredPrompts.length} of {prompts.length} prompts
-          </p>
-          {(filters.source !== 'all' || filters.intent !== 'all' || filters.minBusinessValue > 0) && (
-            <button
-              onClick={() => setFilters({ source: 'all', intent: 'all', minBusinessValue: 0 })}
-              className=\"text-sm text-blue-600 hover:text-blue-700 font-medium\"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      </div>
+        {/* Filters */}
+        <div className="bg-white rounded-xl p-6 border border-slate-200">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter size={20} className="text-slate-600" />
+            <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
+          </div>
 
-      {/* Prompts List */}
-      <div className=\"space-y-4\">
-        {filteredPrompts.map((prompt, index) => (
-          <div key={prompt.id || index} className=\"bg-white rounded-xl p-6 border border-slate-200 hover:border-blue-300 transition-colors\">
-            <div className=\"flex items-start justify-between mb-3\">
-              <div className=\"flex items-center gap-3\">
-                <div className=\"flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg text-blue-700 font-bold\">
-                  #{prompt.rank}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Source</label>
+              <select
+                value={filters.source}
+                onChange={(e) => setFilters({...filters, source: e.target.value})}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Sources</option>
+                <option value="ai_testing">AI Testing</option>
+                <option value="reddit_mining">Reddit Mining</option>
+                <option value="customer_surveys">Customer Surveys</option>
+                <option value="keyword_conversion">Keyword Conversion</option>
+                <option value="competitor_analysis">Competitor Analysis</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Intent</label>
+              <select
+                value={filters.intent}
+                onChange={(e) => setFilters({...filters, intent: e.target.value})}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Intents</option>
+                <option value="information_seeking">Information Seeking</option>
+                <option value="recommendation_seeking">Recommendation</option>
+                <option value="instructions">Instructions</option>
+                <option value="problem_solving">Problem Solving</option>
+                <option value="creative">Creative</option>
+                <option value="research">Research</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Min Business Value: {filters.minBusinessValue}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={filters.minBusinessValue}
+                onChange={(e) => setFilters({...filters, minBusinessValue: parseInt(e.target.value)})}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-slate-600">
+              Showing {filteredPrompts.length} of {prompts.length} prompts
+            </p>
+            {(filters.source !== 'all' || filters.intent !== 'all' || filters.minBusinessValue > 0) && (
+              <button
+                onClick={() => setFilters({ source: 'all', intent: 'all', minBusinessValue: 0 })}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Prompts List */}
+        <div className="space-y-4">
+          {filteredPrompts.map((prompt, index) => (
+            <div key={prompt.id || index} className="bg-white rounded-xl p-6 border border-slate-200 hover:border-blue-300 transition-colors">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg text-blue-700 font-bold">
+                    #{prompt.rank}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">{prompt.prompt}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSourceColor(prompt.source)}`}>
+                        {getSourceLabel(prompt.source)}
+                      </span>
+                      <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
+                        {getIntentLabel(prompt.intent)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+
+                <div className={`px-3 py-1 rounded-lg font-bold ${getScoreColor(prompt.overall_score)}`}>
+                  {Math.round(prompt.overall_score)}
+                </div>
+              </div>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-4 pt-4 border-t border-slate-100">
                 <div>
-                  <h3 className=\"text-lg font-semibold text-slate-900\">{prompt.prompt}</h3>
-                  <div className=\"flex items-center gap-2 mt-1\">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSourceColor(prompt.source)}`}>
-                      {getSourceLabel(prompt.source)}
-                    </span>
-                    <span className=\"px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium\">
-                      {getIntentLabel(prompt.intent)}
-                    </span>
+                  <p className="text-xs text-slate-500 mb-1">Business Value</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{width: `${prompt.business_value}%`}}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{prompt.business_value}</span>
                   </div>
                 </div>
-              </div>
 
-              <div className={`px-3 py-1 rounded-lg font-bold ${getScoreColor(prompt.overall_score)}`}>
-                {Math.round(prompt.overall_score)}
-              </div>
-            </div>
-
-            {/* Metrics */}
-            <div className=\"grid grid-cols-2 md:grid-cols-6 gap-4 mt-4 pt-4 border-t border-slate-100\">
-              <div>
-                <p className=\"text-xs text-slate-500 mb-1\">Business Value</p>
-                <div className=\"flex items-center gap-2\">
-                  <div className=\"flex-1 bg-slate-100 rounded-full h-2\">
-                    <div 
-                      className=\"bg-blue-600 h-2 rounded-full\" 
-                      style={{width: `${prompt.business_value}%`}}
-                    />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Volume</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full" 
+                        style={{width: `${prompt.volume}%`}}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{prompt.volume}</span>
                   </div>
-                  <span className=\"text-sm font-medium text-slate-900\">{prompt.business_value}</span>
                 </div>
-              </div>
 
-              <div>
-                <p className=\"text-xs text-slate-500 mb-1\">Volume</p>
-                <div className=\"flex items-center gap-2\">
-                  <div className=\"flex-1 bg-slate-100 rounded-full h-2\">
-                    <div 
-                      className=\"bg-green-600 h-2 rounded-full\" 
-                      style={{width: `${prompt.volume}%`}}
-                    />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Competition</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="bg-red-600 h-2 rounded-full" 
+                        style={{width: `${prompt.competition}%`}}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{prompt.competition}</span>
                   </div>
-                  <span className=\"text-sm font-medium text-slate-900\">{prompt.volume}</span>
                 </div>
-              </div>
 
-              <div>
-                <p className=\"text-xs text-slate-500 mb-1\">Competition</p>
-                <div className=\"flex items-center gap-2\">
-                  <div className=\"flex-1 bg-slate-100 rounded-full h-2\">
-                    <div 
-                      className=\"bg-red-600 h-2 rounded-full\" 
-                      style={{width: `${prompt.competition}%`}}
-                    />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Feasibility</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="bg-purple-600 h-2 rounded-full" 
+                        style={{width: `${prompt.feasibility}%`}}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{prompt.feasibility}</span>
                   </div>
-                  <span className=\"text-sm font-medium text-slate-900\">{prompt.competition}</span>
                 </div>
-              </div>
 
-              <div>
-                <p className=\"text-xs text-slate-500 mb-1\">Feasibility</p>
-                <div className=\"flex items-center gap-2\">
-                  <div className=\"flex-1 bg-slate-100 rounded-full h-2\">
-                    <div 
-                      className=\"bg-purple-600 h-2 rounded-full\" 
-                      style={{width: `${prompt.feasibility}%`}}
-                    />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Citation</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="bg-orange-600 h-2 rounded-full" 
+                        style={{width: `${prompt.citation_potential}%`}}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{prompt.citation_potential}</span>
                   </div>
-                  <span className=\"text-sm font-medium text-slate-900\">{prompt.feasibility}</span>
                 </div>
-              </div>
 
-              <div>
-                <p className=\"text-xs text-slate-500 mb-1\">Citation</p>
-                <div className=\"flex items-center gap-2\">
-                  <div className=\"flex-1 bg-slate-100 rounded-full h-2\">
-                    <div 
-                      className=\"bg-orange-600 h-2 rounded-full\" 
-                      style={{width: `${prompt.citation_potential}%`}}
-                    />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Relevance</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-100 rounded-full h-2">
+                      <div 
+                        className="bg-indigo-600 h-2 rounded-full" 
+                        style={{width: `${prompt.brand_relevance}%`}}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-slate-900">{prompt.brand_relevance}</span>
                   </div>
-                  <span className=\"text-sm font-medium text-slate-900\">{prompt.citation_potential}</span>
-                </div>
-              </div>
-
-              <div>
-                <p className=\"text-xs text-slate-500 mb-1\">Relevance</p>
-                <div className=\"flex items-center gap-2\">
-                  <div className=\"flex-1 bg-slate-100 rounded-full h-2\">
-                    <div 
-                      className=\"bg-indigo-600 h-2 rounded-full\" 
-                      style={{width: `${prompt.brand_relevance}%`}}
-                    />
-                  </div>
-                  <span className=\"text-sm font-medium text-slate-900\">{prompt.brand_relevance}</span>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredPrompts.length === 0 && (
-        <div className=\"bg-white rounded-xl p-12 border border-slate-200 text-center\">
-          <Filter className=\"mx-auto text-slate-400 mb-4\" size={48} />
-          <h3 className=\"text-lg font-semibold text-slate-900 mb-2\">No prompts match your filters</h3>
-          <p className=\"text-slate-600\">Try adjusting your filter criteria</p>
+          ))}
         </div>
-      )}
-    </div>
+
+        {filteredPrompts.length === 0 && (
+          <div className="bg-white rounded-xl p-12 border border-slate-200 text-center">
+            <Filter className="mx-auto text-slate-400 mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No prompts match your filters</h3>
+            <p className="text-slate-600">Try adjusting your filter criteria</p>
+          </div>
+        )}
+      </div>
   );
 };
 
