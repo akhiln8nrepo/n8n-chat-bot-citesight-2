@@ -1,37 +1,39 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Header, BackgroundTasks
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
-import random
-from emergentintegrations.llm.chat import LlmChat, UserMessage
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+from passlib.context import CryptContext
+import jwt
+
+# Import new services
+from crawler_service import crawler_service
+from prompt_generator_service import prompt_generator_service
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-auth_db = client['citesight_auth']  # Separate DB for auth
+db = client['citesight']
 
-# Auth utilities
-from passlib.context import CryptContext
-import jwt
-
+# Auth setup
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'citesight_secret_key_2024')
 ALGORITHM = "HS256"
 
+# Utility functions
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
@@ -40,7 +42,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=1440)  # 24 hours
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -51,1080 +53,346 @@ def verify_token(token: str):
     except:
         return None
 
-def generate_otp() -> str:
-    import secrets
-    import string
-    return ''.join(secrets.choice(string.digits) for _ in range(6))
-
-# Create the main app without a prefix
-app = FastAPI()
-
-# Rate limiter setup
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-# AI Platforms
-AI_PLATFORMS = ["Google AI Overview", "Bing Copilot", "Perplexity", "ChatGPT"]
-
-# ==================== MODELS ====================
-
-class Publisher(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    email: str
-    website: str
-    user_id: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class PublisherCreate(BaseModel):
-    name: str
-    email: str
-    website: str
-
-class Content(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    publisher_id: str
-    title: str
-    url: str
-    content_text: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class ContentCreate(BaseModel):
-    publisher_id: str
-    title: str
-    url: str
-    content_text: str
-
-class AIVisibilityRecord(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    content_id: str
-    platform: str
-    visibility_score: float  # 0-100
-    is_present: bool
-    summary_snippet: Optional[str] = None
-    position: Optional[int] = None
-    checked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class Keyword(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    content_id: str
-    keyword: str
-    platforms_found: List[str] = Field(default_factory=list)
-    avg_position: Optional[float] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class KeywordCreate(BaseModel):
-    content_id: str
-    keyword: str
-
-class GEORecommendation(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    content_id: str
-    recommendation_type: str
-    recommendation_text: str
-    priority: str  # high, medium, low
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class CompetitorAnalysis(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    publisher_id: str
-    competitor_name: str
-    competitor_url: str
-    visibility_score: float
-    platforms_present: List[str]
-    analyzed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-# ==================== HELPER FUNCTIONS ====================
-
-def generate_mock_visibility_data(content_id: str) -> List[Dict]:
-    """Generate mock visibility data for AI platforms"""
-    visibility_records = []
-    for platform in AI_PLATFORMS:
-        is_present = random.choice([True, True, False])  # 66% chance of being present
-        visibility_score = random.uniform(45, 95) if is_present else random.uniform(5, 30)
-        
-        record = {
-            "id": str(uuid.uuid4()),
-            "content_id": content_id,
-            "platform": platform,
-            "visibility_score": round(visibility_score, 2),
-            "is_present": is_present,
-            "summary_snippet": f"Your content appears in {platform} summary..." if is_present else None,
-            "position": random.randint(1, 10) if is_present else None,
-            "checked_at": datetime.now(timezone.utc).isoformat()
-        }
-        visibility_records.append(record)
-    
-    return visibility_records
-
-async def generate_geo_recommendations(content_text: str, content_id: str) -> List[Dict]:
-    """Generate GEO recommendations using LLM"""
-    try:
-        api_key = os.environ.get('EMERGENT_LLM_KEY')
-        if not api_key:
-            raise ValueError("EMERGENT_LLM_KEY not found")
-        
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"citesight_rec_{content_id}",
-            system_message="You are an AI-powered GEO (Generative Engine Optimization) expert. Provide 5 actionable recommendations to improve content visibility in AI-generated summaries. Focus on semantic structure, schema markup, FAQ injection, and content optimization."
-        ).with_model("openai", "gpt-4o-mini")
-        
-        user_message = UserMessage(
-            text=f"Analyze this content and provide 5 specific GEO recommendations to improve its visibility in AI summaries (Google AI Overview, Bing Copilot, Perplexity, ChatGPT). Content: {content_text[:1000]}..."
-        )
-        
-        response = await chat.send_message(user_message)
-        
-        # Parse response and create recommendations
-        recommendations = []
-        priorities = ["high", "high", "medium", "medium", "low"]
-        types = ["Semantic Chunking", "Schema Markup", "FAQ Injection", "Content Structure", "Keyword Optimization"]
-        
-        lines = response.strip().split('\n')
-        for i, line in enumerate(lines[:5]):
-            if line.strip():
-                recommendations.append({
-                    "id": str(uuid.uuid4()),
-                    "content_id": content_id,
-                    "recommendation_type": types[i] if i < len(types) else "General",
-                    "recommendation_text": line.strip(),
-                    "priority": priorities[i] if i < len(priorities) else "medium",
-                    "created_at": datetime.now(timezone.utc).isoformat()
-                })
-        
-        return recommendations
-    except Exception as e:
-        logger.error(f"Error generating recommendations: {e}")
-        # Fallback mock recommendations
-        return [
-            {
-                "id": str(uuid.uuid4()),
-                "content_id": content_id,
-                "recommendation_type": "Semantic Chunking",
-                "recommendation_text": "Break content into logical sections with clear H2/H3 headings to improve AI parsing.",
-                "priority": "high",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "content_id": content_id,
-                "recommendation_type": "Schema Markup",
-                "recommendation_text": "Add Article schema markup with author, datePublished, and description fields.",
-                "priority": "high",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "content_id": content_id,
-                "recommendation_type": "FAQ Injection",
-                "recommendation_text": "Add FAQ section with 3-5 common questions and concise answers.",
-                "priority": "medium",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-        ]
-
-# ==================== AUTH MIDDLEWARE ====================
-
-async def get_current_user_from_token(authorization: str = None):
-    """Extract and verify user from JWT token"""
-    if not authorization or not authorization.startswith('Bearer '):
-        return None
-    
-    token = authorization.split(' ')[1]
-    try:
-        payload = verify_token(token)
-        if payload:
-            return payload.get('user_id')
-    except Exception as e:
-        logger.warning(f"Token verification failed: {str(e)}")
-    return None
-
-# ==================== ROUTES ====================
-
-@api_router.get("/")
-async def root():
-    return {"message": "AI Content Monitor API"}
-
-# ==================== AUTH ROUTES ====================
-
-class RegisterRequest(BaseModel):
+# Pydantic Models
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
     first_name: str
     last_name: str
+    company_name: str
+    website_url: str
+    industry: str
+    competitors: Optional[List[str]] = []
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class User(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
-    phone: str
-    password: str
-    business_name: Optional[str] = None
-    business_type: Optional[str] = None
-    gst_tax_id: Optional[str] = None
-    notes: Optional[str] = None
+    password_hash: str
+    first_name: str
+    last_name: str
+    company_name: str
+    website_url: str
+    industry: str
+    competitors: List[str] = []
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    onboarding_completed: bool = False
 
-class LoginRequest(BaseModel):
-    identifier: str
-    password: str
+class Prompt(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    prompt: str
+    source: str  # ai_testing, reddit_mining, customer_surveys, keyword_conversion, competitor_analysis
+    intent: str  # information_seeking, recommendation_seeking, instructions, problem_solving, creative, research
+    business_value: int
+    volume: int
+    competition: int
+    feasibility: int
+    citation_potential: int
+    brand_relevance: int
+    overall_score: float
+    rank: int
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    week_number: int  # Week of year
 
-class VerifyOTPRequest(BaseModel):
-    identifier: str
-    otp_code: str
-    otp_type: str
+class CrawlResult(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    url: str
+    title: str
+    content: str
+    metadata: Dict
+    product_details: Dict
+    crawled_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
-@api_router.post("/auth/register")
-async def register_user(data: RegisterRequest):
-    """Register new user"""
-    try:
-        # Check if email exists
-        existing = await auth_db.users.find_one({"email": data.email})
-        if existing:
-            raise HTTPException(status_code=400, detail="Email already registered")
-        
-        # Check if phone exists
-        existing_phone = await auth_db.users.find_one({"phone": data.phone})
-        if existing_phone:
-            raise HTTPException(status_code=400, detail="Phone already registered")
-        
-        # Create user
-        user_id = str(uuid.uuid4())
-        user_doc = {
-            "id": user_id,
-            "first_name": data.first_name,
-            "last_name": data.last_name,
-            "email": data.email,
-            "phone": data.phone,
-            "password_hash": hash_password(data.password),
-            "business_name": data.business_name,
-            "business_type": data.business_type,
-            "gst_tax_id": data.gst_tax_id,
-            "notes": data.notes,
-            "email_verified": False,
-            "phone_verified": False,
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "last_login": None
-        }
-        
-        await auth_db.users.insert_one(user_doc)
-        
-        # Generate OTPs
-        email_otp = generate_otp()
-        sms_otp = generate_otp()
-        
-        # Store OTPs
-        await auth_db.otp_logs.insert_many([
-            {
-                "user_id": user_id,
-                "otp_code": email_otp,
-                "otp_type": "email",
-                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
-                "verified": False,
-                "attempts": 0,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            },
-            {
-                "user_id": user_id,
-                "otp_code": sms_otp,
-                "otp_type": "sms",
-                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
-                "verified": False,
-                "attempts": 0,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-        ])
-        
-        # Mock send OTP
-        logger.info(f"📧 EMAIL OTP: {email_otp} for {data.email}")
-        logger.info(f"📱 SMS OTP: {sms_otp} for {data.phone}")
-        
-        return {
-            "message": "Registration successful. Please verify your email or phone.",
-            "user_id": user_id,
-            "email": data.email,
-            "phone": data.phone,
-            "email_verified": False,
-            "phone_verified": False
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Registration error: {e}")
-        raise HTTPException(status_code=500, detail="Registration failed")
+# Create FastAPI app
+app = FastAPI()
+api_router = APIRouter(prefix='/api')
 
-@api_router.post("/auth/login")
-async def login_user(data: LoginRequest):
-    """User login"""
-    try:
-        # Find user by email or phone
-        user = await auth_db.users.find_one({
-            "$or": [{"email": data.identifier}, {"phone": data.identifier}]
-        })
-        
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        
-        # Verify password
-        if not verify_password(data.password, user["password_hash"]):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        
-        # Check verification
-        if not user.get("email_verified") and not user.get("phone_verified"):
-            raise HTTPException(status_code=403, detail="Please verify your email or phone")
-        
-        # Update last login
-        await auth_db.users.update_one(
-            {"id": user["id"]},
-            {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
-        )
-        
-        # Create token
-        token = create_access_token({"user_id": user["id"], "email": user["email"]})
-        
-        return {
-            "message": "Login successful",
-            "access_token": token,
-            "token_type": "bearer",
-            "user": {
-                "id": user["id"],
-                "first_name": user["first_name"],
-                "last_name": user["last_name"],
-                "email": user["email"],
-                "phone": user["phone"],
-                "email_verified": user.get("email_verified", False),
-                "phone_verified": user.get("phone_verified", False)
-            }
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Login error: {e}")
-        raise HTTPException(status_code=500, detail="Login failed")
-
-@api_router.post("/auth/verify-otp")
-async def verify_otp(data: VerifyOTPRequest):
-    """Verify OTP"""
-    try:
-        # Find user
-        user = await auth_db.users.find_one({
-            "$or": [{"email": data.identifier}, {"phone": data.identifier}]
-        })
-        
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        # Find OTP
-        otp_log = await auth_db.otp_logs.find_one({
-            "user_id": user["id"],
-            "otp_type": data.otp_type,
-            "verified": False,
-            "otp_code": data.otp_code
-        })
-        
-        if not otp_log:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
-        
-        # Check expiry
-        expires_at = datetime.fromisoformat(otp_log["expires_at"])
-        if datetime.now(timezone.utc) > expires_at:
-            raise HTTPException(status_code=400, detail="OTP expired")
-        
-        # Mark as verified
-        await auth_db.otp_logs.update_one(
-            {"_id": otp_log["_id"]},
-            {"$set": {"verified": True}}
-        )
-        
-        # Update user verification
-        update_field = "email_verified" if data.otp_type == "email" else "phone_verified"
-        await auth_db.users.update_one(
-            {"id": user["id"]},
-            {"$set": {update_field: True}}
-        )
-        
-        user = await auth_db.users.find_one({"id": user["id"]})
-        
-        return {
-            "message": f"{data.otp_type.capitalize()} verified successfully",
-            "email_verified": user.get("email_verified", False),
-            "phone_verified": user.get("phone_verified", False)
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"OTP verification error: {e}")
-        raise HTTPException(status_code=500, detail="Verification failed")
-
-@api_router.post("/auth/send-otp")
-async def send_otp(data: dict):
-    """Send OTP"""
-    try:
-        identifier = data.get("identifier")
-        otp_type = data.get("otp_type")
-        
-        user = await auth_db.users.find_one({
-            "$or": [{"email": identifier}, {"phone": identifier}]
-        })
-        
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        # Generate new OTP
-        otp_code = generate_otp()
-        
-        await auth_db.otp_logs.insert_one({
-            "user_id": user["id"],
-            "otp_code": otp_code,
-            "otp_type": otp_type,
-            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
-            "verified": False,
-            "attempts": 0,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-        logger.info(f"🔐 {otp_type.upper()} OTP: {otp_code} for {identifier}")
-        
-        return {"message": f"OTP sent to your {otp_type}", "expires_in": "10 minutes"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Send OTP error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send OTP")
-
-@api_router.post("/auth/resend-otp")
-async def resend_otp(data: dict):
-    """Resend OTP"""
-    return await send_otp(data)
-
-@api_router.get("/auth/dev/get-otp/{identifier}")
-async def get_otp_dev(identifier: str):
-    """DEV: Get latest OTP"""
-    try:
-        user = await auth_db.users.find_one({
-            "$or": [{"email": identifier}, {"phone": identifier}]
-        })
-        
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        email_otp = await auth_db.otp_logs.find_one(
-            {"user_id": user["id"], "otp_type": "email", "verified": False},
-            sort=[("created_at", -1)]
-        )
-        
-        sms_otp = await auth_db.otp_logs.find_one(
-            {"user_id": user["id"], "otp_type": "sms", "verified": False},
-            sort=[("created_at", -1)]
-        )
-        
-        return {
-            "user_email": user["email"],
-            "user_phone": user["phone"],
-            "email_otp": email_otp["otp_code"] if email_otp else None,
-            "sms_otp": sms_otp["otp_code"] if sms_otp else None,
-            "note": "DEV endpoint - remove in production"
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Publisher routes
-@api_router.post("/publishers", response_model=Publisher)
-async def create_publisher(input: PublisherCreate, request: Request):
-    # Get user_id from auth token
-    auth_header = request.headers.get('authorization')
-    user_id = await get_current_user_from_token(auth_header)
-    
-    # Check if publisher already exists for this user
-    if user_id:
-        existing = await db.publishers.find_one({"user_id": str(user_id)})
-        if existing:
-            existing['created_at'] = datetime.fromisoformat(existing['created_at']) if isinstance(existing['created_at'], str) else existing['created_at']
-            return Publisher(**existing)
-    
-    publisher_data = input.model_dump()
-    publisher_data['user_id'] = str(user_id) if user_id else None
-    publisher = Publisher(**publisher_data)
-    doc = publisher.model_dump()
-    doc['created_at'] = doc['created_at'].isoformat()
-    await db.publishers.insert_one(doc)
-    return publisher
-
-@api_router.get("/publishers", response_model=List[Publisher])
-async def get_publishers(request: Request):
-    auth_header = request.headers.get('authorization')
-    user_id = await get_current_user_from_token(auth_header)
-    
-    # Only return publishers for the logged-in user
-    query = {"user_id": str(user_id)} if user_id else {}
-    publishers = await db.publishers.find(query, {"_id": 0}).to_list(1000)
-    for p in publishers:
-        if isinstance(p['created_at'], str):
-            p['created_at'] = datetime.fromisoformat(p['created_at'])
-    return publishers
-
-@api_router.get("/publishers/me", response_model=Publisher)
-async def get_my_publisher(request: Request):
-    """Get or create publisher for logged-in user"""
-    auth_header = request.headers.get('authorization')
-    user_id = await get_current_user_from_token(auth_header)
-    
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    # Find existing publisher
-    existing = await db.publishers.find_one({"user_id": str(user_id)})
-    if existing:
-        if isinstance(existing['created_at'], str):
-            existing['created_at'] = datetime.fromisoformat(existing['created_at'])
-        return Publisher(**existing)
-    
-    # Create default publisher for user (using user_id as identifier)
-    # In production, you would fetch user details from auth system
-    publisher = Publisher(
-        name=f"User {user_id}",
-        email=f"user{user_id}@citesight.com",
-        website="https://citesight.com",
-        user_id=str(user_id)
-    )
-    doc = publisher.model_dump()
-    doc['created_at'] = doc['created_at'].isoformat()
-    await db.publishers.insert_one(doc)
-    return publisher
-
-# Content routes
-@api_router.post("/content", response_model=Content)
-async def create_content(input: ContentCreate, request: Request):
-    # Verify user owns the publisher
-    auth_header = request.headers.get('authorization')
-    user_id = await get_current_user_from_token(auth_header)
-    
-    if user_id:
-        publisher = await db.publishers.find_one({"id": input.publisher_id, "user_id": str(user_id)})
-        if not publisher:
-            raise HTTPException(status_code=403, detail="Not authorized to add content for this publisher")
-    
-    content = Content(**input.model_dump())
-    doc = content.model_dump()
-    doc['created_at'] = doc['created_at'].isoformat()
-    await db.content.insert_one(doc)
-    
-    # Generate initial visibility data
-    visibility_data = generate_mock_visibility_data(content.id)
-    if visibility_data:
-        await db.visibility.insert_many(visibility_data)
-    
-    # Generate GEO recommendations
-    recommendations = await generate_geo_recommendations(input.content_text, content.id)
-    if recommendations:
-        await db.recommendations.insert_many(recommendations)
-    
-    return content
-
-@api_router.get("/content", response_model=List[Content])
-async def get_content(request: Request):
-    # Get user's publisher IDs
-    auth_header = request.headers.get('authorization')
-    user_id = await get_current_user_from_token(auth_header)
-    
-    if not user_id:
-        return []
-    
-    # Find user's publishers
-    publishers = await db.publishers.find({"user_id": str(user_id)}, {"_id": 0}).to_list(100)
-    publisher_ids = [p['id'] for p in publishers]
-    
-    # Get content for these publishers
-    content_list = await db.content.find({"publisher_id": {"$in": publisher_ids}}, {"_id": 0}).to_list(1000)
-    for c in content_list:
-        if isinstance(c['created_at'], str):
-            c['created_at'] = datetime.fromisoformat(c['created_at'])
-    return content_list
-
-@api_router.get("/content/{content_id}", response_model=Content)
-async def get_content_by_id(content_id: str):
-    content = await db.content.find_one({"id": content_id}, {"_id": 0})
-    if not content:
-        raise HTTPException(status_code=404, detail="Content not found")
-    if isinstance(content['created_at'], str):
-        content['created_at'] = datetime.fromisoformat(content['created_at'])
-    return content
-
-# Visibility routes
-@api_router.get("/visibility/{content_id}")
-async def get_visibility(content_id: str):
-    visibility_records = await db.visibility.find({"content_id": content_id}, {"_id": 0}).to_list(100)
-    for v in visibility_records:
-        if isinstance(v.get('checked_at'), str):
-            v['checked_at'] = datetime.fromisoformat(v['checked_at'])
-    return visibility_records
-
-# Keyword routes
-@api_router.post("/keywords", response_model=Keyword)
-async def create_keyword(input: KeywordCreate):
-    # Check if content exists
-    content = await db.content.find_one({"id": input.content_id})
-    if not content:
-        raise HTTPException(status_code=404, detail="Content not found")
-    
-    # Simulate keyword tracking
-    platforms_found = random.sample(AI_PLATFORMS, random.randint(1, 4))
-    keyword = Keyword(
-        **input.model_dump(),
-        platforms_found=platforms_found,
-        avg_position=round(random.uniform(2, 8), 1) if platforms_found else None
-    )
-    
-    doc = keyword.model_dump()
-    doc['created_at'] = doc['created_at'].isoformat()
-    await db.keywords.insert_one(doc)
-    return keyword
-
-@api_router.get("/keywords", response_model=List[Keyword])
-async def get_all_keywords(auth_header: str = Header(None, alias="Authorization")):
-    """Get all keywords for the authenticated user"""
-    user_id = await get_current_user_from_token(auth_header)
-    
-    # Get all content for this user first
-    user_content = await db.content.find({"user_id": user_id}, {"_id": 0, "id": 1}).to_list(1000)
-    content_ids = [c['id'] for c in user_content]
-    
-    # Get keywords for user's content
-    keywords = await db.keywords.find({"content_id": {"$in": content_ids}}, {"_id": 0}).to_list(1000)
-    for k in keywords:
-        if isinstance(k['created_at'], str):
-            k['created_at'] = datetime.fromisoformat(k['created_at'])
-    return keywords
-
-@api_router.get("/keywords/{content_id}", response_model=List[Keyword])
-async def get_keywords(content_id: str):
-    keywords = await db.keywords.find({"content_id": content_id}, {"_id": 0}).to_list(100)
-    for k in keywords:
-        if isinstance(k['created_at'], str):
-            k['created_at'] = datetime.fromisoformat(k['created_at'])
-    return keywords
-
-@api_router.delete("/keywords/{keyword_id}")
-async def delete_keyword(keyword_id: str):
-    """Delete a keyword"""
-    result = await db.keywords.delete_one({"id": keyword_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Keyword not found")
-    return {"message": "Keyword deleted successfully"}
-
-# Recommendations routes
-@api_router.get("/recommendations/{content_id}", response_model=List[GEORecommendation])
-async def get_recommendations(content_id: str):
-    recommendations = await db.recommendations.find({"content_id": content_id}, {"_id": 0}).to_list(100)
-    for r in recommendations:
-        if isinstance(r['created_at'], str):
-            r['created_at'] = datetime.fromisoformat(r['created_at'])
-    return recommendations
-
-# Dashboard stats
-@api_router.get("/dashboard/stats")
-async def get_dashboard_stats(request: Request):
-    # Get user's publisher
-    auth_header = request.headers.get('authorization')
-    user_id = await get_current_user_from_token(auth_header)
-    
-    if not user_id:
-        return {
-            "total_content": 0,
-            "avg_visibility_score": 0,
-            "platforms_present": {},
-            "total_keywords": 0,
-            "visibility_trend": []
-        }
-    
-    # Find user's publisher
-    publisher = await db.publishers.find_one({"user_id": str(user_id)})
-    if not publisher:
-        return {
-            "total_content": 0,
-            "avg_visibility_score": 0,
-            "platforms_present": {},
-            "total_keywords": 0,
-            "visibility_trend": []
-        }
-    
-    # Get all content for this publisher
-    query = {"publisher_id": publisher['id']}
-    content_list = await db.content.find(query, {"_id": 0}).to_list(1000)
-    
-    if not content_list:
-        return {
-            "total_content": 0,
-            "avg_visibility_score": 0,
-            "platforms_present": {},
-            "total_keywords": 0,
-            "visibility_trend": []
-        }
-    
-    content_ids = [c['id'] for c in content_list]
-    
-    # Get visibility data
-    visibility_records = await db.visibility.find(
-        {"content_id": {"$in": content_ids}},
-        {"_id": 0}
-    ).to_list(10000)
-    
-    # Calculate stats
-    total_score = sum(v['visibility_score'] for v in visibility_records)
-    avg_score = total_score / len(visibility_records) if visibility_records else 0
-    
-    platforms_count = {}
-    for v in visibility_records:
-        if v['is_present']:
-            platforms_count[v['platform']] = platforms_count.get(v['platform'], 0) + 1
-    
-    # Get keyword count
-    keywords_count = await db.keywords.count_documents({"content_id": {"$in": content_ids}})
-    
-    # Generate visibility trend (last 7 days)
-    trend = []
-    for i in range(6, -1, -1):
-        date = datetime.now(timezone.utc) - timedelta(days=i)
-        score = round(random.uniform(60, 85), 2)  # Mock trend data
-        trend.append({
-            "date": date.strftime("%Y-%m-%d"),
-            "score": score
-        })
-    
-    return {
-        "total_content": len(content_list),
-        "avg_visibility_score": round(avg_score, 2),
-        "platforms_present": platforms_count,
-        "total_keywords": keywords_count,
-        "visibility_trend": trend
-    }
-
-# Competitor routes
-@api_router.get("/competitors")
-async def get_competitors(publisher_id: str):
-    # Generate mock competitor data
-    competitors = [
-        {
-            "id": str(uuid.uuid4()),
-            "publisher_id": publisher_id,
-            "competitor_name": "TechCrunch",
-            "competitor_url": "https://techcrunch.com",
-            "visibility_score": 87.5,
-            "platforms_present": ["Google AI Overview", "Bing Copilot", "Perplexity", "ChatGPT"],
-            "analyzed_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "publisher_id": publisher_id,
-            "competitor_name": "The Verge",
-            "competitor_url": "https://theverge.com",
-            "visibility_score": 82.3,
-            "platforms_present": ["Google AI Overview", "Bing Copilot", "ChatGPT"],
-            "analyzed_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "publisher_id": publisher_id,
-            "competitor_name": "Wired",
-            "competitor_url": "https://wired.com",
-            "visibility_score": 79.8,
-            "platforms_present": ["Google AI Overview", "Perplexity", "ChatGPT"],
-            "analyzed_at": datetime.now(timezone.utc).isoformat()
-        }
-    ]
-    
-    return competitors
-
-# ==================== CHATBOT WEBHOOK PROXY ====================
-
-class ChatbotMessage(BaseModel):
-    message: str
-    timestamp: str
-    user_info: Optional[Dict] = None
-
-@api_router.post("/chatbot-webhook")
-async def chatbot_webhook_proxy(data: ChatbotMessage):
-    """Proxy endpoint to forward chatbot messages to n8n webhook (avoids CORS)"""
-    import httpx
-    
-    webhook_url = "https://saiakhilpullakhandam.app.n8n.cloud/webhook-test/03bb0686-b350-4884-b565-5335eecf9580"
-    
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                webhook_url,
-                json=data.dict(),
-                timeout=10.0
-            )
-            
-            logger.info(f"Webhook response status: {response.status_code}")
-            logger.info(f"Webhook response body: {response.text}")
-            
-            # Return the webhook response
-            if response.status_code == 200:
-                try:
-                    webhook_data = response.json()
-                    logger.info(f"Webhook JSON response: {webhook_data}")
-                    
-                    # If webhook returns a response, use it
-                    if webhook_data:
-                        return webhook_data
-                    else:
-                        return {"reply": "Thank you for your message! Our team will get back to you soon."}
-                        
-                except Exception as json_error:
-                    logger.warning(f"Failed to parse webhook JSON: {json_error}, using text response")
-                    # If webhook returns plain text, wrap it in reply field
-                    return {"reply": response.text or "Thank you for your message! Our team will get back to you soon."}
-            else:
-                logger.warning(f"Webhook returned non-200 status: {response.status_code}, body: {response.text}")
-                return {"reply": "Thank you for your message! Our team will get back to you soon."}
-                
-    except httpx.TimeoutException as e:
-        logger.error(f"Webhook timeout: {str(e)}")
-        return {"reply": "Thank you for your message! Our team will get back to you soon."}
-    except Exception as e:
-        logger.error(f"Error forwarding to webhook: {str(e)}")
-        return {"reply": "Thank you for your message! Our team will get back to you soon."}
-
-# ==================== KEYWORD ANALYSIS & RECOMMENDATIONS ====================
-
-from keyword_service import (
-    discover_llm_questions,
-    search_most_searched_queries,
-    analyze_content_coverage,
-    discover_competitors
-)
-from templates_service import get_all_templates, get_template
-from recommendations_service import (
-    generate_comprehensive_recommendations,
-    apply_recommendations,
-    generate_model_specific_recommendations
-)
-
-class KeywordAnalysisRequest(BaseModel):
-    keyword: str
-    content_id: Optional[str] = None
-
-class ContentRecommendationRequest(BaseModel):
-    content_id: str
-    template_id: str = "base"
-
-class ApplyRecommendationsRequest(BaseModel):
-    content_id: str
-    recommendations: Dict
-
-@api_router.post("/keyword-analysis")
-async def analyze_keyword(request: KeywordAnalysisRequest):
-    """
-    Analyze a keyword: discover LLM questions, search queries, and evaluate content coverage
-    """
-    try:
-        keyword = request.keyword
-        
-        # Discover LLM questions
-        llm_questions = await discover_llm_questions(keyword)
-        
-        # Search most-searched queries
-        search_queries = await search_most_searched_queries(keyword)
-        
-        result = {
-            "keyword": keyword,
-            "llm_questions": llm_questions,
-            "search_queries": search_queries,
-            "analysis_timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        
-        # If content_id provided, analyze coverage
-        if request.content_id:
-            content = await db.content.find_one({"id": request.content_id}, {"_id": 0})
-            if content:
-                coverage_analysis = await analyze_content_coverage(
-                    keyword,
-                    content['content_text'],
-                    llm_questions
-                )
-                result['coverage_analysis'] = coverage_analysis
-        
-        # Store in database
-        analysis_doc = result.copy()
-        analysis_doc['id'] = str(uuid.uuid4())
-        analysis_doc['content_id'] = request.content_id
-        await db.keyword_analysis.insert_one(analysis_doc)
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Error in keyword analysis: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@api_router.get("/templates")
-async def get_templates():
-    """Get all available optimization templates"""
-    return get_all_templates()
-
-@api_router.get("/templates/{template_id}")
-async def get_template_by_id(template_id: str):
-    """Get a specific template by ID"""
-    template = get_template(template_id)
-    if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    return template
-
-@api_router.post("/content/{content_id}/recommendations")
-async def generate_recommendations(content_id: str, template_id: str = "base"):
-    """
-    Generate comprehensive recommendations for content
-    """
-    try:
-        # Get content
-        content = await db.content.find_one({"id": content_id}, {"_id": 0})
-        if not content:
-            raise HTTPException(status_code=404, detail="Content not found")
-        
-        # Get keyword analysis if exists
-        keyword_analysis = await db.keyword_analysis.find_one(
-            {"content_id": content_id},
-            {"_id": 0},
-            sort=[("analysis_timestamp", -1)]
-        )
-        
-        # Extract keyword (use first keyword or derive from title)
-        keyword_doc = await db.keywords.find_one({"content_id": content_id}, {"_id": 0})
-        keyword = keyword_doc.get('keyword') if keyword_doc else content['title'].split()[0]
-        
-        # Generate recommendations
-        recommendations = await generate_comprehensive_recommendations(
-            content_text=content['content_text'],
-            title=content['title'],
-            keyword=keyword,
-            template_id=template_id,
-            keyword_analysis=keyword_analysis.get('coverage_analysis') if keyword_analysis else None
-        )
-        
-        # Store recommendations
-        rec_doc = {
-            "id": str(uuid.uuid4()),
-            "content_id": content_id,
-            "template_id": template_id,
-            "recommendations": recommendations,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.content_recommendations.insert_one(rec_doc)
-        
-        return recommendations
-        
-    except Exception as e:
-        logger.error(f"Error generating recommendations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@api_router.post("/content/{content_id}/apply-recommendations")
-async def apply_content_recommendations(content_id: str, request: ApplyRecommendationsRequest):
-    """
-    Apply recommendations to content automatically
-    """
-    try:
-        # Get current content
-        content = await db.content.find_one({"id": content_id}, {"_id": 0})
-        if not content:
-            raise HTTPException(status_code=404, detail="Content not found")
-        
-        # Apply recommendations
-        optimized = await apply_recommendations(
-            content_text=content['content_text'],
-            title=content['title'],
-            recommendations=request.recommendations
-        )
-        
-        # Update content in database
-        await db.content.update_one(
-            {"id": content_id},
-            {"$set": {
-                "title": optimized['optimized_title'],
-                "content_text": optimized['optimized_content'],
-                "optimized": True,
-                "optimization_date": datetime.now(timezone.utc).isoformat(),
-                "changes_applied": optimized['changes_summary']
-            }}
-        )
-        
-        return {
-            "message": "Recommendations applied successfully",
-            "original_title": content['title'],
-            "original_content": content['content_text'],
-            "optimized_title": optimized['optimized_title'],
-            "optimized_content": optimized['optimized_content'],
-            "changes_summary": optimized['changes_summary']
-        }
-        
-    except Exception as e:
-        logger.error(f"Error applying recommendations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@api_router.post("/content/{content_id}/model-recommendations")
-async def get_model_specific_recommendations(content_id: str, model_id: str = "chatgpt"):
-    """
-    Generate model-specific recommendations
-    """
-    try:
-        content = await db.content.find_one({"id": content_id}, {"_id": 0})
-        if not content:
-            raise HTTPException(status_code=404, detail="Content not found")
-        
-        keyword_doc = await db.keywords.find_one({"content_id": content_id}, {"_id": 0})
-        keyword = keyword_doc.get('keyword') if keyword_doc else content['title'].split()[0]
-        
-        recommendations = await generate_model_specific_recommendations(
-            content_text=content['content_text'],
-            title=content['title'],
-            keyword=keyword,
-            model_id=model_id
-        )
-        
-        return recommendations
-        
-    except Exception as e:
-        logger.error(f"Error generating model recommendations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@api_router.post("/discover-competitors")
-async def find_competitors(keyword: str, title: str):
-    """
-    Discover competitors for a given keyword and title
-    """
-    try:
-        competitors = await discover_competitors(keyword, title)
-        return {"competitors": competitors}
-        
-    except Exception as e:
-        logger.error(f"Error discovering competitors: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Include the routers in the main app
-app.include_router(api_router)
-
+# CORS
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Auth dependency
+async def get_current_user(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        token = authorization.replace("Bearer ", "")
+        payload = verify_token(token)
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        user_id = payload.get('user_id')
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        return user
+    except Exception as e:
+        logger.error(f"Auth error: {e}")
+        raise HTTPException(status_code=401, detail="Authentication failed")
+
+# ============================================
+# AUTH ROUTES
+# ============================================
+
+@api_router.post("/auth/register")
+async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
+    """
+    Register new user with company details and competitors
+    """
+    # Check if user exists
+    existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user
+    user = User(
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        company_name=user_data.company_name,
+        website_url=user_data.website_url,
+        industry=user_data.industry,
+        competitors=user_data.competitors or []
+    )
+    
+    await db.users.insert_one(user.model_dump())
+    
+    # Start onboarding process in background
+    background_tasks.add_task(onboard_user, user.id, user_data.website_url, user_data.industry, user_data.competitors)
+    
+    # Create access token
+    access_token = create_access_token({"user_id": user.id, "email": user.email})
+    
+    return {
+        "message": "Registration successful. We're analyzing your website...",
+        "access_token": access_token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "company_name": user.company_name
+        }
+    }
+
+@api_router.post("/auth/login")
+async def login(credentials: UserLogin):
+    """Login user"""
+    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user or not verify_password(credentials.password, user['password_hash']):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    access_token = create_access_token({"user_id": user['id'], "email": user['email']})
+    
+    return {
+        "access_token": access_token,
+        "user": {
+            "id": user['id'],
+            "email": user['email'],
+            "first_name": user['first_name'],
+            "last_name": user['last_name'],
+            "company_name": user['company_name'],
+            "onboarding_completed": user.get('onboarding_completed', False)
+        }
+    }
+
+# ============================================
+# ONBOARDING & CRAWLING
+# ============================================
+
+async def onboard_user(user_id: str, website_url: str, industry: str, competitors: List[str]):
+    """
+    Background task: Crawl website and generate initial prompts
+    """
+    try:
+        logger.info(f"Starting onboarding for user {user_id}")
+        
+        # Step 1: Crawl website
+        logger.info(f"Crawling website: {website_url}")
+        crawl_result = await crawler_service.crawl_website(website_url)
+        
+        if not crawl_result.get('success'):
+            logger.error(f"Crawl failed: {crawl_result.get('error')}")
+            return
+        
+        # Extract product details
+        product_details = crawler_service.extract_core_product_details(crawl_result)
+        
+        # Save crawl result
+        crawl_data = CrawlResult(
+            user_id=user_id,
+            url=website_url,
+            title=crawl_result.get('title', ''),
+            content=crawl_result.get('content', ''),
+            metadata=crawl_result.get('metadata', {}),
+            product_details=product_details
+        )
+        await db.crawl_results.insert_one(crawl_data.model_dump())
+        
+        logger.info(f"Crawl saved. Generating prompts...")
+        
+        # Step 2: Generate prompts
+        website_data = {
+            'name': product_details.get('name', ''),
+            'description': product_details.get('description', ''),
+            'key_topics': product_details.get('key_topics', []),
+            'industry_keywords': product_details.get('industry_keywords', [])
+        }
+        
+        prompts = await prompt_generator_service.generate_prompts(
+            website_data=website_data,
+            industry=industry,
+            competitors=competitors
+        )
+        
+        logger.info(f"Generated {len(prompts)} prompts")
+        
+        # Step 3: Save prompts to database
+        week_number = datetime.now(timezone.utc).isocalendar()[1]
+        
+        for prompt_data in prompts:
+            prompt = Prompt(
+                user_id=user_id,
+                prompt=prompt_data.get('prompt', ''),
+                source=prompt_data.get('source', ''),
+                intent=prompt_data.get('intent', ''),
+                business_value=prompt_data.get('business_value', 0),
+                volume=prompt_data.get('volume', 0),
+                competition=prompt_data.get('competition', 0),
+                feasibility=prompt_data.get('feasibility', 0),
+                citation_potential=prompt_data.get('citation_potential', 0),
+                brand_relevance=prompt_data.get('brand_relevance', 0),
+                overall_score=prompt_data.get('overall_score', 0),
+                rank=prompt_data.get('rank', 0),
+                week_number=week_number
+            )
+            await db.prompts.insert_one(prompt.model_dump())
+        
+        # Mark onboarding complete
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"onboarding_completed": True}}
+        )
+        
+        logger.info(f"Onboarding complete for user {user_id}")
+        
+        # TODO: Send email notification
+        
+    except Exception as e:
+        logger.error(f"Onboarding failed for user {user_id}: {e}")
+
+# ============================================
+# PROMPT ROUTES
+# ============================================
+
+@api_router.get("/prompts")
+async def get_prompts(request: Request, authorization: str = Header(None)):
+    """Get all prompts for current user"""
+    user = await get_current_user(authorization)
+    
+    # Get latest week's prompts
+    prompts = await db.prompts.find(
+        {"user_id": user['id']},
+        {"_id": 0}
+    ).sort("overall_score", -1).to_list(25)
+    
+    return prompts
+
+@api_router.get("/prompts/stats")
+async def get_prompt_stats(authorization: str = Header(None)):
+    """Get prompt statistics for dashboard"""
+    user = await get_current_user(authorization)
+    
+    total_prompts = await db.prompts.count_documents({"user_id": user['id']})
+    
+    # Get average scores
+    pipeline = [
+        {"$match": {"user_id": user['id']}},
+        {"$group": {
+            "_id": None,
+            "avg_business_value": {"$avg": "$business_value"},
+            "avg_feasibility": {"$avg": "$feasibility"},
+            "avg_citation_potential": {"$avg": "$citation_potential"}
+        }}
+    ]
+    
+    stats = await db.prompts.aggregate(pipeline).to_list(1)
+    avg_stats = stats[0] if stats else {}
+    
+    # Get source breakdown
+    source_pipeline = [
+        {"$match": {"user_id": user['id']}},
+        {"$group": {"_id": "$source", "count": {"$sum": 1}}}
+    ]
+    source_breakdown = await db.prompts.aggregate(source_pipeline).to_list(10)
+    
+    return {
+        "total_prompts": total_prompts,
+        "avg_business_value": round(avg_stats.get('avg_business_value', 0), 1),
+        "avg_feasibility": round(avg_stats.get('avg_feasibility', 0), 1),
+        "avg_citation_potential": round(avg_stats.get('avg_citation_potential', 0), 1),
+        "source_breakdown": {item['_id']: item['count'] for item in source_breakdown}
+    }
+
+@api_router.get("/onboarding/status")
+async def get_onboarding_status(authorization: str = Header(None)):
+    """Check if onboarding is complete"""
+    user = await get_current_user(authorization)
+    
+    return {
+        "completed": user.get('onboarding_completed', False),
+        "prompt_count": await db.prompts.count_documents({"user_id": user['id']})
+    }
+
+# ============================================
+# USER ROUTES
+# ============================================
+
+@api_router.get("/user/me")
+async def get_current_user_info(authorization: str = Header(None)):
+    """Get current user info"""
+    user = await get_current_user(authorization)
+    
+    return {
+        "id": user['id'],
+        "email": user['email'],
+        "first_name": user['first_name'],
+        "last_name": user['last_name'],
+        "company_name": user['company_name'],
+        "website_url": user['website_url'],
+        "industry": user['industry'],
+        "competitors": user.get('competitors', []),
+        "onboarding_completed": user.get('onboarding_completed', False)
+    }
+
+# Root routes
+@app.get("/")
+async def root():
+    return {"message": "CiteSight API - Prompt Monitoring Platform"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+# Register router
+app.include_router(api_router)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
