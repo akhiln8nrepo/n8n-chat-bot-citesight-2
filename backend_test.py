@@ -65,22 +65,22 @@ class GEOPromptFrameworkTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
-    def test_register_user(self):
-        """Test user registration with 7-factor scoring requirements"""
+    def test_register_adidas_user(self):
+        """Test user registration with Adidas sportswear company data"""
         user_data = {
             "email": self.test_email,
             "password": "Test123!",
             "first_name": "Test",
-            "last_name": "User", 
-            "company_name": "TestCo",
-            "website_url": "https://example.com",
-            "industry": "SaaS",
-            "product_description": "AI-powered analytics platform",
-            "competitors": ["competitor1.com"]
+            "last_name": "Adidas", 
+            "company_name": "Adidas",
+            "website_url": "https://www.adidas.com",
+            "industry": "Sportswear & Athletic Apparel",
+            "product_description": "Premium athletic footwear and sportswear brand specializing in running shoes, football boots, and lifestyle sneakers",
+            "competitors": ["Nike", "Puma", "Under Armour"]
         }
         
         success, response = self.run_test(
-            "Register User for 7-Factor Testing",
+            "Register Adidas User for GEO Framework Testing",
             "POST",
             "auth/register",
             200,
