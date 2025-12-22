@@ -13,6 +13,7 @@ import asyncio
 from datetime import datetime, timezone
 from litellm import completion
 from tavily import TavilyClient
+import random
 from json_parser import parse_llm_json, extract_prompts_from_response
 
 # Load environment variables
