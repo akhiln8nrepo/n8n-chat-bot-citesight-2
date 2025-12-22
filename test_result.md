@@ -135,6 +135,21 @@ backend:
         agent: "main"
         comment: "FIXED: Root cause was incorrect import in get_current_user_from_token() function. It was trying to import verify_token from 'auth_utils' module which doesn't exist - verify_token is already defined in server.py. Removed the incorrect import statement. Tested complete flow end-to-end: 1) Register user 2) Verify OTP 3) Login and get JWT token 4) Create publisher with token 5) Create content with publisher_id 6) Fetch content list. All APIs working perfectly. User_id now correctly extracted from JWT token and associated with publishers/content for proper data isolation."
 
+  - task: "7-Factor Scoring Algorithm Update"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/backend/prompt_generator_service.py, /app/frontend/src/components/PromptMonitoring.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "IMPLEMENTED 7-FACTOR SCORING ALGORITHM: Updated prompt_generator_service.py with new scoring system. Changes: 1) Added Intent Score as 7th metric (0-100 scale based on buyer journey stage) 2) Updated all scoring functions to use 0-100 scale 3) New weighted composite score: Business Value (25%), Volume (20%), Competition (15%), Feasibility (15%), Intent (10%), Citation (10%), Brand Relevance (5%) 4) Updated server.py Prompt model to include intent_score field 5) Updated frontend PromptMonitoring.js to display 7 metrics instead of 6 6) Updated /prompts/stats endpoint to return all 7 metrics and intent breakdown. Ready for testing to verify new scoring algorithm works correctly with registration -> prompt generation flow."
+      - working: true
+        agent: "testing"
+        comment: "7-FACTOR SCORING ALGORITHM FULLY VERIFIED! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested complete flow with user test7factor1766437433@citesight.com. Results: 1) REGISTRATION & ONBOARDING: User registration successful, onboarding completed in ~19 seconds, generated 25 prompts from 5 sources 2) BACKEND API VERIFICATION: All 7 metrics present in prompts (business_value, volume, competition, feasibility, intent_score, citation_potential, brand_relevance, overall_score) with correct 0-100 scale 3) STATS ENDPOINT: Returns all 7 metric averages plus intent_breakdown (avg_intent_score: 70.4, intent categories: instructions, recommendation_seeking, information_seeking, research, problem_solving) 4) FRONTEND DISPLAY: PromptMonitoring.js correctly displays all 7 metrics with individual progress bars in grid-cols-7 layout, including new Intent Score metric with yellow color coding 5) WEIGHTED SCORING: Overall scores calculated correctly using new weights (Business Value 25%, Volume 20%, Competition 15%, Feasibility 15%, Intent 10%, Citation 10%, Brand Relevance 5%). The 7-factor scoring algorithm is fully functional and ready for production use!"
+
 frontend:
   - task: "Chatbot Integration on Home Page"
     implemented: true
