@@ -685,28 +685,41 @@ Return ONLY a JSON array:
         return max(0, min(100, score))
     
     def _calculate_brand_relevance(self, prompt_data: Dict, website_data: Dict) -> int:
-        """Calculate brand relevance (1-10 scale)"""
+        """
+        Calculate brand relevance (0-100 scale)
+        Higher = more directly relevant to your brand/product
+        """
         text = prompt_data.get('prompt', '').lower()
-        score = 5  # Base score
+        score = 40  # Base score
         
-        # Direct brand mention = very relevant
+        # Direct brand mention = extremely relevant
         product_name = website_data.get('name', '').lower()
         if product_name and product_name in text:
-            score += 4
+            score += 40
         
         # Key topics match
         key_topics = [t.lower() for t in website_data.get('key_topics', [])]
+        topic_matches = sum(1 for topic in key_topics if topic and topic in text)
+        score += min(topic_matches * 8, 24)  # Max +24
+        
+        # Industry keywords match
         industry_kw = [k.lower() for k in website_data.get('industry_keywords', [])]
-        all_keywords = key_topics + industry_kw
+        industry_matches = sum(1 for kw in industry_kw if kw and kw in text)
+        score += min(industry_matches * 5, 15)  # Max +15
         
-        matches = sum(1 for kw in all_keywords if kw and kw in text)
+        # User description relevance
+        user_desc = website_data.get('user_description', '').lower()
+        if user_desc:
+            desc_words = [w for w in user_desc.split() if len(w) > 4][:15]
+            desc_matches = sum(1 for w in desc_words if w in text)
+            score += min(desc_matches * 4, 16)  # Max +16
         
-        if matches >= 3:
-            score += 2
-        elif matches >= 2:
-            score += 1
+        # Competitor mentions can be relevant too
+        source = prompt_data.get('source', '')
+        if 'competitor' in source:
+            score += 10  # Competitor comparison queries are relevant
         
-        return max(1, min(10, score))
+        return max(0, min(100, score))
     
     def _get_fallback_prompts(self, source: str, industry: str, product_name: str, count: int) -> List[Dict]:
         """Fallback prompts if API fails - more specific to industry"""
