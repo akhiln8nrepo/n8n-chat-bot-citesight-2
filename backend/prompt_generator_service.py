@@ -493,20 +493,52 @@ Return ONLY a JSON array:
         else:
             return random.randint(30, 55)
     
-    def _get_fallback_prompts(self, source: str, industry: str, count: int) -> List[Dict]:
-        """Fallback prompts if API fails"""
-        fallback_templates = [
-            f"What are the best {industry} solutions in 2025?",
-            f"How do I choose the right {industry} tool for my business?",
-            f"What are the key features to look for in {industry} software?",
-            f"Can you recommend a good {industry} platform for startups?",
-            f"What are the pros and cons of {industry} solutions?"
-        ]
+    def _get_fallback_prompts(self, source: str, industry: str, product_name: str, count: int) -> List[Dict]:
+        """Fallback prompts if API fails - more specific to industry"""
+        fallback_templates = {
+            'ai_testing': [
+                f"What are the key features to look for in {industry} software?",
+                f"How does {product_name} compare to other {industry} solutions?",
+                f"What problems does {product_name} solve for businesses?",
+                f"Can you recommend a good {industry} platform for my needs?",
+                f"What are the benefits of using {product_name}?"
+            ],
+            'reddit_mining': [
+                f"What do people on Reddit say about {industry} tools?",
+                f"Has anyone used {product_name}? Looking for reviews",
+                f"What's the best {industry} solution according to Reddit?",
+                f"Common problems with {industry} software?",
+                f"Is {product_name} worth it for small businesses?"
+            ],
+            'customer_surveys': [
+                f"What are the main pain points in {industry}?",
+                f"How can {product_name} improve my workflow?",
+                f"What features do customers value most in {industry} tools?",
+                f"Is {product_name} easy to use for beginners?",
+                f"What ROI can I expect from {product_name}?"
+            ],
+            'keyword_conversion': [
+                f"Best {industry} software 2025",
+                f"{product_name} vs competitors",
+                f"How to choose {industry} platform",
+                f"{industry} solution pricing comparison",
+                f"{product_name} features and benefits"
+            ],
+            'competitor_analysis': [
+                f"Top alternatives to {product_name}",
+                f"Compare {product_name} with similar tools",
+                f"Which is better for {industry}?",
+                f"Pros and cons of different {industry} platforms",
+                f"Why choose {product_name} over competitors?"
+            ]
+        }
+        
+        templates = fallback_templates.get(source, fallback_templates['ai_testing'])
         
         return [{
-            'prompt': fallback_templates[i % len(fallback_templates)],
+            'prompt': templates[i % len(templates)],
             'source': source,
-            'intent': 'information_seeking'
+            'intent': 'information_seeking' if i % 2 == 0 else 'recommendation_seeking'
         } for i in range(count)]
 
 
