@@ -165,7 +165,6 @@ class SevenFactorScoringTester:
         print(f"✅ All 7 metrics present with correct scale (0-100)")
         print(f"   Sample metrics: business_value={first_prompt['business_value']}, intent_score={first_prompt['intent_score']}")
         
-        self.tests_passed += 1
         return True
 
     def test_stats_endpoint_7_metrics(self):
@@ -199,7 +198,6 @@ class SevenFactorScoringTester:
         print(f"   avg_intent_score: {response.get('avg_intent_score')}")
         print(f"   intent_breakdown: {response.get('intent_breakdown')}")
         
-        self.tests_passed += 1
         return True
 
     def run_all_tests(self):
