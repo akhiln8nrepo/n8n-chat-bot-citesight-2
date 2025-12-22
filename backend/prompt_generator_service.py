@@ -457,77 +457,127 @@ Return ONLY a JSON array:
         return ranked_prompts
     
     def _calculate_business_value(self, prompt_data: Dict, website_data: Dict) -> int:
-        """Calculate business value score (0-100)"""
-        # Higher value for recommendation seeking and problem solving
-        intent = prompt_data.get('intent', '')
-        if 'recommendation' in intent:
-            return random.randint(75, 95)
-        elif 'problem_solving' in intent:
-            return random.randint(70, 90)
-        elif 'instruction' in intent:
-            return random.randint(60, 80)
-        else:
-            return random.randint(50, 70)
+        """Calculate business value score (1-10 scale)"""
+        text = prompt_data.get('prompt', '').lower()
+        score = 5  # Base score
+        
+        # High business value indicators
+        if any(word in text for word in ['pricing', 'cost', 'buy', 'purchase', 'trial', 'demo']):
+            score += 3
+        if any(word in text for word in ['best', 'top', 'recommend']):
+            score += 2
+        if any(word in text for word in ['vs', 'compare', 'alternative']):
+            score += 2
+        
+        # Brand-specific queries have high business value
+        product_name = website_data.get('name', '').lower()
+        if product_name and product_name in text:
+            score += 1
+        
+        # Low business value indicators
+        if any(word in text for word in ['free', 'what is', 'define']):
+            score -= 1
+        
+        return max(1, min(10, score))
     
     def _estimate_volume(self, prompt_data: Dict) -> int:
-        """Estimate search volume (0-100)"""
-        # Sources with higher volume potential
+        """Estimate search volume (1-10 scale)"""
+        text = prompt_data.get('prompt', '').lower()
+        score = 5  # Base score
+        
+        # High volume indicators
+        if any(word in text for word in ['best', 'how to', 'what is']):
+            score += 2
+        
+        # Generic category queries = high volume
         source = prompt_data.get('source', '')
-        if source == 'reddit_mining':
-            return random.randint(70, 95)
-        elif source == 'keyword_conversion':
-            return random.randint(65, 90)
-        else:
-            return random.randint(50, 80)
+        if source in ['keyword_conversion', 'ai_testing']:
+            score += 2
+        
+        # Brand-specific = lower volume
+        if 'competitor' in source or 'reddit' in source:
+            score -= 1
+        
+        return max(1, min(10, score))
     
     def _estimate_competition(self, prompt_data: Dict) -> int:
-        """Estimate competition level (0-100, lower is better)"""
+        """Estimate competition level (1-10, LOWER is better/easier)"""
+        text = prompt_data.get('prompt', '').lower()
+        score = 5  # Base score
+        
+        # High competition (lower score = more competitive)
+        if any(word in text for word in ['best', 'top']):
+            score -= 2
+        
+        # Lower competition (higher score = less competitive/easier)
+        if any(word in text for word in ['specific', 'niche']):
+            score += 2
+        
+        # Brand-specific = less competition
         source = prompt_data.get('source', '')
-        if source == 'competitor_analysis':
-            return random.randint(70, 90)  # High competition
-        else:
-            return random.randint(40, 70)  # Medium competition
+        if 'competitor' in source:
+            score += 2
+        
+        return max(1, min(10, score))
     
     def _estimate_feasibility(self, prompt_data: Dict, website_data: Dict) -> int:
-        """Estimate feasibility of ranking for this prompt (0-100)"""
-        # Higher feasibility for prompts related to key topics
-        prompt_text = prompt_data.get('prompt', '').lower()
+        """Estimate feasibility of ranking (1-10 scale)"""
+        text = prompt_data.get('prompt', '').lower()
+        score = 6  # Base score (slightly optimistic)
+        
+        # Check brand mention
+        product_name = website_data.get('name', '').lower()
+        if product_name and product_name in text:
+            score += 2
+        
+        # Check if features match
         key_topics = [t.lower() for t in website_data.get('key_topics', [])]
+        matches = sum(1 for topic in key_topics if topic in text)
+        score += min(matches, 2)  # Max +2 for feature matches
         
-        matches = sum(1 for topic in key_topics if topic in prompt_text)
-        
-        if matches >= 2:
-            return random.randint(75, 95)
-        elif matches == 1:
-            return random.randint(60, 80)
-        else:
-            return random.randint(45, 65)
+        return max(1, min(10, score))
     
     def _estimate_citation_potential(self, prompt_data: Dict) -> int:
-        """Estimate potential to be cited by AI models (0-100)"""
+        """Estimate potential to be cited by AI (1-10 scale)"""
+        text = prompt_data.get('prompt', '').lower()
         intent = prompt_data.get('intent', '')
-        if 'recommendation' in intent or 'comparison' in intent:
-            return random.randint(70, 95)
-        else:
-            return random.randint(50, 75)
+        score = 5  # Base score
+        
+        # High citation potential
+        if intent in ['recommendation_seeking', 'research']:
+            score += 3
+        if any(word in text for word in ['review', 'experience', 'opinion', 'vs', 'compare']):
+            score += 1
+        
+        # Question format = higher citation
+        if text.startswith(('what', 'how', 'why', 'which', 'should')):
+            score += 1
+        
+        return max(1, min(10, score))
     
     def _calculate_brand_relevance(self, prompt_data: Dict, website_data: Dict) -> int:
-        """Calculate how relevant prompt is to the brand (0-100)"""
-        prompt_text = prompt_data.get('prompt', '').lower()
+        """Calculate brand relevance (1-10 scale)"""
+        text = prompt_data.get('prompt', '').lower()
+        score = 5  # Base score
+        
+        # Direct brand mention = very relevant
+        product_name = website_data.get('name', '').lower()
+        if product_name and product_name in text:
+            score += 4
+        
+        # Key topics match
         key_topics = [t.lower() for t in website_data.get('key_topics', [])]
         industry_kw = [k.lower() for k in website_data.get('industry_keywords', [])]
-        
         all_keywords = key_topics + industry_kw
-        matches = sum(1 for kw in all_keywords if kw in prompt_text)
+        
+        matches = sum(1 for kw in all_keywords if kw and kw in text)
         
         if matches >= 3:
-            return random.randint(80, 100)
+            score += 2
         elif matches >= 2:
-            return random.randint(65, 85)
-        elif matches >= 1:
-            return random.randint(50, 70)
-        else:
-            return random.randint(30, 55)
+            score += 1
+        
+        return max(1, min(10, score))
     
     def _get_fallback_prompts(self, source: str, industry: str, product_name: str, count: int) -> List[Dict]:
         """Fallback prompts if API fails - more specific to industry"""
