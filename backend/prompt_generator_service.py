@@ -75,27 +75,40 @@ class PromptGeneratorService:
         logger.info("Generating AI testing prompts")
         
         product_name = website_data.get('name', 'this product')
-        description = website_data.get('description', '')
+        description = website_data.get('description', '') or website_data.get('user_description', '')
         key_topics = website_data.get('key_topics', [])
+        full_content = website_data.get('full_content', '')[:1500]
         
         prompt = f"""
-You are an AI prompt expert. Generate 5 high-value prompts that users would ask AI assistants about products in the {industry} industry.
+You are an AI prompt generation expert. Based on this ACTUAL website content, generate 5 prompts that users would genuinely ask AI assistants.
 
-Product Context:
-- Name: {product_name}
-- Description: {description}
-- Key Topics: {', '.join(key_topics[:5])}
+PRODUCT INFORMATION (from website crawl):
+Company/Product: {product_name}
+Industry: {industry}
+Description: {description}
+Key Topics: {', '.join(key_topics[:8])}
 
-Generate prompts that:
-1. Are natural questions users ask AI assistants
-2. Relate to {industry} industry problems/solutions
-3. Could lead to this product being recommended
-4. Are specific enough to be useful
-5. Cover different user intents (comparison, how-to, benefits, use cases, alternatives)
+WEBSITE CONTENT EXCERPT:
+{full_content}
 
-Return ONLY a JSON array of 5 prompts in this format:
+Generate 5 SPECIFIC prompts that:
+1. Relate directly to THIS product/service (use actual features/benefits from content)
+2. Are questions users would ask AI assistants like ChatGPT, Claude, Perplexity
+3. Could realistically lead to this product being mentioned/recommended
+4. Cover different intents and buyer journey stages
+5. Are natural conversational questions (not keyword stuffing)
+
+For each prompt, determine the user intent:
+- information_seeking: User wants to learn/understand
+- recommendation_seeking: User wants product suggestions
+- instructions: User needs how-to guidance
+- problem_solving: User has a specific problem to solve
+- research: User is doing deep research
+- creative: User needs creative solutions
+
+Return ONLY valid JSON (no markdown, no explanations):
 [
-  {{"prompt": "question here", "intent": "information_seeking|recommendation_seeking|instructions|problem_solving"}}
+  {{"prompt": "actual question based on content", "intent": "one of the intents above"}}
 ]
 """
         
@@ -104,15 +117,26 @@ Return ONLY a JSON array of 5 prompts in this format:
                 model="openai/gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}],
                 api_key=OPENROUTER_API_KEY,
-                temperature=0.7,
+                temperature=0.8,
+                max_tokens=800,
                 response_format={"type": "json_object"}
             )
             
             content = response.choices[0].message.content
-            data = json.loads(content)
+            logger.info(f"AI Testing response: {content[:200]}...")
+            
+            # Try to extract JSON from markdown code blocks if present
+            import re
+            if "```json" in content:
+                content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
+            elif "```" in content:
+                content = re.search(r'```\s*(.*?)\s*```', content, re.DOTALL).group(1)
+            
+            data = json.loads(content.strip())
             prompts = data if isinstance(data, list) else data.get('prompts', [])
             
-            return [{
+            return [
+{
                 'prompt': p.get('prompt', ''),
                 'source': 'ai_testing',
                 'intent': p.get('intent', 'information_seeking')
@@ -120,7 +144,7 @@ Return ONLY a JSON array of 5 prompts in this format:
         
         except Exception as e:
             logger.error(f"AI testing prompts failed: {e}")
-            return self._get_fallback_prompts('ai_testing', industry, 5)
+            return self._get_fallback_prompts('ai_testing', industry, product_name, 5)
     
     async def _generate_reddit_prompts(self, industry: str, website_data: Dict) -> List[Dict]:
         """
