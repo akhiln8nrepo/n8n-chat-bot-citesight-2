@@ -38,6 +38,7 @@ const Register = () => {
         company_name: formData.company_name,
         website_url: formData.website_url,
         industry: formData.industry,
+        product_description: formData.product_description || null,
         competitors: competitorsList
       });
 
