@@ -226,14 +226,14 @@ async def login(credentials: UserLogin):
 # ONBOARDING & CRAWLING
 # ============================================
 
-async def onboard_user(user_id: str, website_url: str, industry: str, competitors: List[str]):
+async def onboard_user(user_id: str, website_url: str, industry: str, product_description: Optional[str], competitors: List[str]):
     """
     Background task: Crawl website and generate initial prompts
     """
     try:
         logger.info(f"Starting onboarding for user {user_id}")
         
-        # Step 1: Crawl website
+        # Step 1: Crawl website using Firecrawl
         logger.info(f"Crawling website: {website_url}")
         crawl_result = await crawler_service.crawl_website(website_url)
         
@@ -241,8 +241,12 @@ async def onboard_user(user_id: str, website_url: str, industry: str, competitor
             logger.error(f"Crawl failed: {crawl_result.get('error')}")
             return
         
-        # Extract product details
+        # Extract product details from crawl + user description
         product_details = crawler_service.extract_core_product_details(crawl_result)
+        
+        # Enhance with user-provided description if available
+        if product_description:
+            product_details['user_description'] = product_description
         
         # Save crawl result
         crawl_data = CrawlResult(
@@ -255,15 +259,19 @@ async def onboard_user(user_id: str, website_url: str, industry: str, competitor
         )
         await db.crawl_results.insert_one(crawl_data.model_dump())
         
-        logger.info(f"Crawl saved. Generating prompts...")
+        logger.info(f"Crawl saved. Product details extracted: {product_details.get('name', 'Unknown')}")
         
-        # Step 2: Generate prompts
+        # Step 2: Generate prompts based on product understanding
         website_data = {
             'name': product_details.get('name', ''),
             'description': product_details.get('description', ''),
+            'user_description': product_description or '',
             'key_topics': product_details.get('key_topics', []),
-            'industry_keywords': product_details.get('industry_keywords', [])
+            'industry_keywords': product_details.get('industry_keywords', []),
+            'full_content': crawl_result.get('content', '')[:5000]  # First 5000 chars
         }
+        
+        logger.info(f"Generating prompts for: {website_data['name']}")
         
         prompts = await prompt_generator_service.generate_prompts(
             website_data=website_data,
@@ -301,8 +309,6 @@ async def onboard_user(user_id: str, website_url: str, industry: str, competitor
         )
         
         logger.info(f"Onboarding complete for user {user_id}")
-        
-        # TODO: Send email notification
         
     except Exception as e:
         logger.error(f"Onboarding failed for user {user_id}: {e}")
