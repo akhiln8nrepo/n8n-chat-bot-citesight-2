@@ -161,21 +161,19 @@ Return ONLY valid JSON (no markdown, no explanations):
             content = response.choices[0].message.content
             logger.info(f"AI Testing response: {content[:200]}...")
             
-            # Try to extract JSON from markdown code blocks if present
-            import re
-            if "```json" in content:
-                content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL).group(1)
-            elif "```" in content:
-                content = re.search(r'```\s*(.*?)\s*```', content, re.DOTALL).group(1)
+            # Use robust JSON parser
+            data = parse_llm_json(content)
+            if not data:
+                logger.error("Failed to parse JSON from AI Testing response")
+                return self._get_fallback_prompts('ai_testing', industry, product_name, 5)
             
-            data = json.loads(content.strip())
-            prompts = data if isinstance(data, list) else data.get('prompts', [])
+            prompts = extract_prompts_from_response(data)
             
             return [{
-                'prompt': p.get('prompt', ''),
+                'prompt': p.get('prompt', '') or p.get('question', ''),
                 'source': 'ai_testing',
                 'intent': p.get('intent', 'information_seeking')
-            } for p in prompts[:5]]
+            } for p in prompts[:5] if p.get('prompt') or p.get('question')]
         
         except Exception as e:
             logger.error(f"AI testing prompts failed: {e}")
