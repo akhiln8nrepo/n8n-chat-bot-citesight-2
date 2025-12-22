@@ -152,6 +152,13 @@ const PromptMonitoring = () => {
 
   const getCategoryLabel = (intent) => {
     const labels = {
+      'informational': 'INFO',
+      'navigational': 'NAV',
+      'commercial_investigation': 'COMM',
+      'transactional': 'BUY',
+      'local': 'LOCAL',
+      'support': 'HELP',
+      // Legacy mappings
       'information_seeking': 'INFO',
       'recommendation_seeking': 'REC',
       'instructions': 'INS',
@@ -164,6 +171,13 @@ const PromptMonitoring = () => {
 
   const getCategoryColor = (intent) => {
     const colors = {
+      'informational': 'bg-blue-100 text-blue-700',
+      'navigational': 'bg-gray-100 text-gray-700',
+      'commercial_investigation': 'bg-green-100 text-green-700',
+      'transactional': 'bg-purple-100 text-purple-700',
+      'local': 'bg-yellow-100 text-yellow-700',
+      'support': 'bg-orange-100 text-orange-700',
+      // Legacy mappings
       'information_seeking': 'bg-blue-100 text-blue-700',
       'recommendation_seeking': 'bg-green-100 text-green-700',
       'instructions': 'bg-yellow-100 text-yellow-700',
