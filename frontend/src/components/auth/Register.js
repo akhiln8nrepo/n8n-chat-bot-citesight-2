@@ -15,6 +15,7 @@ const Register = () => {
     company_name: '',
     website_url: '',
     industry: '',
+    product_description: '',
     competitors: ''
   });
 
