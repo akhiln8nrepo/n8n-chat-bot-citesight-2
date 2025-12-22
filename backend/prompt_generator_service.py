@@ -24,6 +24,14 @@ logger = logging.getLogger(__name__)
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 
+# Configure litellm for OpenRouter
+os.environ['OPENROUTER_API_KEY'] = OPENROUTER_API_KEY or ''
+
+# litellm settings
+import litellm
+litellm.set_verbose = False  # Reduce logging
+litellm.drop_params = True  # Drop unsupported params
+
 
 class PromptGeneratorService:
     """
