@@ -91,13 +91,14 @@ class Prompt(BaseModel):
     prompt: str
     source: str  # ai_testing, reddit_mining, customer_surveys, keyword_conversion, competitor_analysis
     intent: str  # information_seeking, recommendation_seeking, instructions, problem_solving, creative, research
-    business_value: int
-    volume: int
-    competition: int
-    feasibility: int
-    citation_potential: int
-    brand_relevance: int
-    overall_score: float
+    business_value: int  # 0-100 scale
+    volume: int  # 0-100 scale
+    competition: int  # 0-100 scale (higher = more competition)
+    feasibility: int  # 0-100 scale
+    intent_score: int  # 0-100 scale (NEW 7th metric)
+    citation_potential: int  # 0-100 scale
+    brand_relevance: int  # 0-100 scale
+    overall_score: float  # Weighted composite score
     rank: int
     generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     week_number: int  # Week of year
