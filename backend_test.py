@@ -319,16 +319,20 @@ class GEOPromptFrameworkTester:
         print(f"   Intent breakdown: {response.get('intent_breakdown')}")
         
         return True
-        """Run complete 7-factor scoring test flow"""
-        print("🚀 Starting 7-Factor Scoring Algorithm Tests")
-        print("=" * 60)
+    def run_all_tests(self):
+        """Run complete 7-Layer GEO Prompt Generation Framework tests"""
+        print("🚀 Starting 7-Layer GEO Prompt Generation Framework Tests")
+        print("=" * 70)
         
         # Test sequence
         tests = [
-            ("Register User", self.test_register_user),
+            ("Register Adidas User", self.test_register_adidas_user),
             ("Wait for Onboarding", self.test_onboarding_status), 
-            ("Verify 7 Metrics in Prompts", self.test_prompts_have_7_metrics),
-            ("Verify 7 Metrics in Stats", self.test_stats_endpoint_7_metrics)
+            ("Verify Sportswear Prompt Relevance", self.test_sportswear_prompts_relevance),
+            ("Verify New Prompt Sources", self.test_new_prompt_sources),
+            ("Verify New Intent Classification", self.test_new_intent_classification),
+            ("Verify 7-Factor Scoring System", self.test_7_factor_scoring_system),
+            ("Verify Comprehensive Stats", self.test_stats_endpoint_comprehensive)
         ]
         
         for test_name, test_func in tests:
@@ -344,11 +348,11 @@ class GEOPromptFrameworkTester:
                 break
         
         # Print final results
-        print("\n" + "=" * 60)
-        print(f"📊 7-Factor Scoring Test Results: {self.tests_passed}/{self.tests_run} tests passed")
+        print("\n" + "=" * 70)
+        print(f"📊 GEO Framework Test Results: {self.tests_passed}/{self.tests_run} tests passed")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 All 7-factor scoring tests passed!")
+            print("🎉 All 7-Layer GEO Framework tests passed!")
             return True
         else:
             print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
