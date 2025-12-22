@@ -295,6 +295,7 @@ async def onboard_user(user_id: str, website_url: str, industry: str, product_de
                 volume=prompt_data.get('volume', 0),
                 competition=prompt_data.get('competition', 0),
                 feasibility=prompt_data.get('feasibility', 0),
+                intent_score=prompt_data.get('intent_score', 50),  # NEW 7th metric
                 citation_potential=prompt_data.get('citation_potential', 0),
                 brand_relevance=prompt_data.get('brand_relevance', 0),
                 overall_score=prompt_data.get('overall_score', 0),
