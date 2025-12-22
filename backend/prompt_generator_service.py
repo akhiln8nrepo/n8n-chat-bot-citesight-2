@@ -299,6 +299,7 @@ Return ONLY a JSON array:
             response = completion(
                 model="openrouter/openai/gpt-4o-mini",  # Use openrouter/ prefix
                 messages=[{"role": "user", "content": prompt}],
+                api_base="https://openrouter.ai/api/v1",
                 api_key=OPENROUTER_API_KEY
             )
             
@@ -347,6 +348,7 @@ Return ONLY a JSON array:
             response = completion(
                 model="openrouter/openai/gpt-4o-mini",  # Use openrouter/ prefix
                 messages=[{"role": "user", "content": prompt}],
+                api_base="https://openrouter.ai/api/v1",
                 api_key=OPENROUTER_API_KEY
             )
             
@@ -401,6 +403,7 @@ Return ONLY a JSON array:
             response = completion(
                 model="openrouter/openai/gpt-4o-mini",  # Use openrouter/ prefix
                 messages=[{"role": "user", "content": prompt}],
+                api_base="https://openrouter.ai/api/v1",
                 api_key=OPENROUTER_API_KEY
             )
             
