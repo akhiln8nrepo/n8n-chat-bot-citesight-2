@@ -346,19 +346,19 @@ const PromptMonitoring = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1 uppercase">Category</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1 uppercase">Category (Intent)</label>
               <select
                 value={filters.category}
                 onChange={(e) => setFilters({...filters, category: e.target.value})}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
               >
-                <option value="all">All Categories</option>
-                <option value="information_seeking">Information Seeking</option>
-                <option value="recommendation_seeking">Recommendation</option>
-                <option value="instructions">Instructions</option>
-                <option value="problem_solving">Problem Solving</option>
-                <option value="creative">Creative</option>
-                <option value="research">Research</option>
+                <option value="all">All Intents</option>
+                <option value="informational">Informational</option>
+                <option value="commercial_investigation">Commercial Investigation</option>
+                <option value="transactional">Transactional</option>
+                <option value="navigational">Navigational</option>
+                <option value="local">Local</option>
+                <option value="support">Support</option>
               </select>
             </div>
 
@@ -370,11 +370,14 @@ const PromptMonitoring = () => {
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="all">All Sources</option>
-                <option value="ai_testing">AI Testing</option>
+                <option value="category_search">Category Search</option>
+                <option value="product_discovery">Product Discovery</option>
+                <option value="competitor_comparison">Competitor Comparison</option>
+                <option value="use_case">Use Case</option>
+                <option value="persona_based">Persona Based</option>
+                <option value="problem_solution">Problem/Solution</option>
+                <option value="feature_discovery">Feature Discovery</option>
                 <option value="reddit_mining">Reddit Mining</option>
-                <option value="customer_surveys">Customer Surveys</option>
-                <option value="keyword_conversion">Keyword Conversion</option>
-                <option value="competitor_analysis">Competitor Analysis</option>
               </select>
             </div>
 
