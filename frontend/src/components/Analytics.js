@@ -34,7 +34,7 @@ const Analytics = () => {
       if (platformFilter !== 'all') params.append('platform', platformFilter);
       if (categoryFilter !== 'all') params.append('category', categoryFilter);
       
-      const response = await axios.get(`/api/analytics/dashboard?${params}`);
+      const response = await axios.get(`/analytics/dashboard?${params}`);
       setData(response.data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
