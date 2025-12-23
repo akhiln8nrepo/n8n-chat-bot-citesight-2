@@ -256,7 +256,7 @@ const PromptMonitoring = () => {
           
           <h2 className="text-2xl font-bold text-slate-900 mb-3">Analyzing Your Website</h2>
           <p className="text-slate-600 mb-6">
-            We're crawling your website and generating 25 optimized prompts from 5 different sources...
+            We're running our 8-Layer GEO Prompt Generation framework to discover 100 optimized prompts...
           </p>
           
           <div className="space-y-3 text-left">
@@ -272,13 +272,17 @@ const PromptMonitoring = () => {
               <CheckCircle2 className="text-blue-600 flex-shrink-0" size={20} />
               <span className="text-sm text-slate-700">Analyzing competitors</span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <Loader2 className="animate-spin text-blue-600 flex-shrink-0" size={20} />
-              <span className="text-sm text-slate-700">Generating AI prompts...</span>
+            <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+              <Loader2 className="animate-spin text-purple-600 flex-shrink-0" size={20} />
+              <span className="text-sm text-slate-700">Querying AI platforms (ChatGPT, Claude, Gemini, Perplexity)...</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+              <Loader2 className="animate-spin text-green-600 flex-shrink-0" size={20} />
+              <span className="text-sm text-slate-700">Scoring & ranking prompts...</span>
             </div>
           </div>
           
-          <p className="text-xs text-slate-500 mt-6">This usually takes 30-60 seconds</p>
+          <p className="text-xs text-slate-500 mt-6">This usually takes 60-90 seconds</p>
         </div>
       </div>
     );
