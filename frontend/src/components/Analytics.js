@@ -96,7 +96,7 @@ const Analytics = () => {
     return <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs">#{position}</span>;
   };
 
-  if (loading && !data) {
+  if (loading || !data) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
