@@ -394,6 +394,7 @@ const PromptMonitoring = () => {
                 <option value="problem_solution">Problem/Solution</option>
                 <option value="feature_discovery">Feature Discovery</option>
                 <option value="reddit_mining">Reddit Mining</option>
+                <option value="ai_platform_discovery">AI Platform Discovery</option>
               </select>
             </div>
 
