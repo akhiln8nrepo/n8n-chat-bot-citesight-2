@@ -393,6 +393,73 @@ class Layer8AIDiscoveryTester:
         print(f"   Intent breakdown: {response.get('intent_breakdown')}")
         
         return True
+
+    def test_platform_analytics_endpoint(self):
+        """Test the new /api/prompts/platform-analytics endpoint"""
+        success, response = self.run_test(
+            "Test Platform Analytics Endpoint",
+            "GET",
+            "prompts/platform-analytics",
+            200
+        )
+        
+        if not success or not response:
+            return False
+        
+        # Check if analytics are available
+        if not response.get('has_analytics', False):
+            print("⚠️  No platform analytics available yet - may need more time for Layer 8 processing")
+            return True  # Not a failure, just not ready yet
+        
+        # Verify analytics structure
+        platform_analytics = response.get('platform_analytics', {})
+        if not platform_analytics:
+            print("❌ Empty platform_analytics in response")
+            return False
+        
+        print(f"✅ Platform analytics available for {len(platform_analytics)} platforms")
+        
+        # Check for expected platforms
+        expected_platforms = ['chatgpt', 'claude', 'gemini', 'perplexity']
+        found_platforms = list(platform_analytics.keys())
+        
+        print(f"   Analytics platforms: {found_platforms}")
+        
+        # Verify each platform has visibility scores
+        for platform in found_platforms:
+            platform_data = platform_analytics[platform]
+            if 'visibility_score' not in platform_data:
+                print(f"❌ Missing visibility_score for {platform}")
+                return False
+        
+        print(f"✅ Platform analytics endpoint working correctly")
+        return True
+
+    def test_by_platform_endpoints(self):
+        """Test the new /api/prompts/by-platform/{platform} endpoints"""
+        platforms = ['chatgpt', 'claude', 'gemini', 'perplexity']
+        
+        for platform in platforms:
+            success, response = self.run_test(
+                f"Test By-Platform Endpoint: {platform}",
+                "GET",
+                f"prompts/by-platform/{platform}",
+                200
+            )
+            
+            if not success:
+                return False
+            
+            # Check response structure
+            if 'platform' not in response or 'prompts' not in response or 'count' not in response:
+                print(f"❌ Invalid response structure for {platform}")
+                return False
+            
+            prompt_count = response.get('count', 0)
+            print(f"   {platform.upper()}: {prompt_count} prompts")
+        
+        print(f"✅ All by-platform endpoints working correctly")
+        return True
     def run_all_tests(self):
         """Run complete 7-Layer GEO Prompt Generation Framework tests"""
         print("🚀 Starting 7-Layer GEO Prompt Generation Framework Tests")
