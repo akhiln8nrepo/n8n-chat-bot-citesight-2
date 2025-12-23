@@ -720,19 +720,19 @@ class AIContentMonitorTester:
         )
 
 def main():
-    print("🚀 Starting 7-Layer GEO Prompt Generation Framework Tests")
+    print("🚀 Starting Layer 8: AI Platform Discovery Implementation Tests")
     print("=" * 70)
     
-    # Run GEO Framework Tests
-    geo_tester = GEOPromptFrameworkTester()
-    geo_success = geo_tester.run_all_tests()
+    # Run Layer 8 Tests
+    layer8_tester = Layer8AIDiscoveryTester()
+    layer8_success = layer8_tester.run_all_tests()
     
-    if not geo_success:
-        print("\n❌ 7-Layer GEO Framework tests failed")
+    if not layer8_success:
+        print("\n❌ Layer 8: AI Platform Discovery tests failed")
         return 1
     
     print("\n" + "=" * 70)
-    print("🎉 All 7-Layer GEO Framework tests completed successfully!")
+    print("🎉 All Layer 8: AI Platform Discovery tests completed successfully!")
     return 0
 
 if __name__ == "__main__":
