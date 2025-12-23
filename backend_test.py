@@ -461,19 +461,22 @@ class Layer8AIDiscoveryTester:
         print(f"✅ All by-platform endpoints working correctly")
         return True
     def run_all_tests(self):
-        """Run complete 7-Layer GEO Prompt Generation Framework tests"""
-        print("🚀 Starting 7-Layer GEO Prompt Generation Framework Tests")
+        """Run complete Layer 8: AI Platform Discovery tests"""
+        print("🚀 Starting Layer 8: AI Platform Discovery Implementation Tests")
         print("=" * 70)
         
-        # Test sequence
+        # Test sequence for Layer 8
         tests = [
-            ("Register Adidas User", self.test_register_adidas_user),
-            ("Wait for Onboarding", self.test_onboarding_status), 
-            ("Verify Sportswear Prompt Relevance", self.test_sportswear_prompts_relevance),
-            ("Verify New Prompt Sources", self.test_new_prompt_sources),
+            ("Register Layer 8 Test User", self.test_register_layer8_user),
+            ("Wait for Layer 8 Onboarding", self.test_onboarding_status), 
+            ("Verify Layer 8: AI Platform Discovery", self.test_layer8_ai_platform_discovery),
+            ("Verify Financial Services Relevance", self.test_financial_services_prompts_relevance),
+            ("Verify New Sources (Including Layer 8)", self.test_new_prompt_sources_with_layer8),
             ("Verify New Intent Classification", self.test_new_intent_classification),
             ("Verify 7-Factor Scoring System", self.test_7_factor_scoring_system),
-            ("Verify Comprehensive Stats", self.test_stats_endpoint_comprehensive)
+            ("Verify Comprehensive Stats", self.test_stats_endpoint_comprehensive),
+            ("Test Platform Analytics Endpoint", self.test_platform_analytics_endpoint),
+            ("Test By-Platform Endpoints", self.test_by_platform_endpoints)
         ]
         
         for test_name, test_func in tests:
@@ -490,10 +493,10 @@ class Layer8AIDiscoveryTester:
         
         # Print final results
         print("\n" + "=" * 70)
-        print(f"📊 GEO Framework Test Results: {self.tests_passed}/{self.tests_run} tests passed")
+        print(f"📊 Layer 8 Test Results: {self.tests_passed}/{self.tests_run} tests passed")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 All 7-Layer GEO Framework tests passed!")
+            print("🎉 All Layer 8: AI Platform Discovery tests passed!")
             return True
         else:
             print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
