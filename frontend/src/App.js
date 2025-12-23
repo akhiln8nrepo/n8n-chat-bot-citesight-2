@@ -9,6 +9,7 @@ import Contact from '@/pages/Contact';
 import Logout from '@/pages/Logout';
 import Dashboard from '@/components/Dashboard';
 import PromptMonitoring from '@/components/PromptMonitoring';
+import Analytics from '@/components/Analytics';
 import Register from '@/components/auth/Register';
 import Login from '@/components/auth/Login';
 
@@ -28,6 +29,7 @@ function App() {
           <Route path="/auth/logout" element={<Logout />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/prompts" element={<PromptMonitoring />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Routes>
       </BrowserRouter>
     </div>
