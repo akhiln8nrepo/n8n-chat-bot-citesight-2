@@ -270,7 +270,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "7-Layer GEO Prompt Generation Framework Implementation"
+    - "Layer 8: AI Platform Discovery Implementation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
