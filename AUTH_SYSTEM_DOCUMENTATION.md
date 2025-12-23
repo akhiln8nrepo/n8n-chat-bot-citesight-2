@@ -401,7 +401,7 @@ def send_sms_otp(phone: str, otp: str):
 
 1. **Register New User**
 ```bash
-curl -X POST https://promptr-3.preview.emergentagent.com/api/auth/register \
+curl -X POST https://geo-prompt-monitor.preview.emergentagent.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "Test",
@@ -419,7 +419,7 @@ tail -f /var/log/supervisor/backend.out.log | grep -A 5 "OTP"
 
 3. **Verify Email**
 ```bash
-curl -X POST https://promptr-3.preview.emergentagent.com/api/auth/verify-otp \
+curl -X POST https://geo-prompt-monitor.preview.emergentagent.com/api/auth/verify-otp \
   -H "Content-Type: application/json" \
   -d '{
     "identifier": "test@example.com",
@@ -430,7 +430,7 @@ curl -X POST https://promptr-3.preview.emergentagent.com/api/auth/verify-otp \
 
 4. **Login**
 ```bash
-curl -X POST https://promptr-3.preview.emergentagent.com/api/auth/login \
+curl -X POST https://geo-prompt-monitor.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "identifier": "test@example.com",

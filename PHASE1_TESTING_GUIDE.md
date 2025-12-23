@@ -37,7 +37,7 @@ When you generate recommendations, you get:
 ## 🧪 How to Test
 
 ### Step 1: Login
-1. Go to https://promptr-3.preview.emergentagent.com
+1. Go to https://geo-prompt-monitor.preview.emergentagent.com
 2. Click "Sign In" or "Get Started"
 3. Login with your credentials
 

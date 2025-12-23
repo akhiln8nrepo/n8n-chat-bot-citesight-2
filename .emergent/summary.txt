@@ -1,209 +1,146 @@
 <analysis>**original_problem_statement:**
-The user wants to build a SaaS application named CiteSight. The project's scope has expanded over time to include:
-1.  **Core Application:** A platform for publishers to monitor content visibility in AI summaries, track keywords, and get GEO recommendations.
-2.  **Authentication:** A full login/registration system with mocked 2FA.
-3.  **Marketing Website:** A multi-page marketing site for the brand.
-4.  **Chatbot:** A chatbot on the homepage connected to an n8n webhook.
-5.  **Advanced Content Optimization Features:**
-    *   **Keyword Monitoring:** An advanced tool that uses external APIs (OpenRouter, Tavily) to pull related questions, search trends, keyword intent, and calculate keyword difficulty for a given term.
-    *   **AI Recommendations:** Generates content improvements (headers, body, SEO) based on templates and keyword analysis.
-    *   **Predictive Visibility Score & Competitor Comparison:** Future-planned features to score content and compare it against competitors.
-    *   **Content Monetization:** A feature requested for the future backlog.
+The user wants to build a GEO Prompt Monitoring Tool. The initial goal was to fix the prompt generation logic and improve performance. The user has since provided highly detailed specifications for a new 7-Layer GEO Prompt Generation Framework and an 8th Layer for Real-World Prompt Discovery by querying external AI models (ChatGPT, Claude, Gemini, Perplexity). The user also requested to increase the number of generated prompts to 100, provided detailed UI wireframes for the dashboard and prompt pages, and asked for the data foundation to support future analytics features like visibility scores and competitor tracking per AI platform.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application using FastAPI, React, and MongoDB. The application features a marketing website and a private dashboard accessible after login. A complete, though historically fragile, authentication system is in place. A chatbot component is integrated into the UI but is non-functional due to an inactive webhook. The main development focus has been on building an advanced Keyword Monitoring feature, which is heavily integrated with OpenRouter and Tavily APIs. This feature allows users to analyze keywords, view AI-generated questions with difficulty/intent/trend data, and receive AI-powered content recommendations.
+The application is a full-stack app with a FastAPI backend, React frontend, and MongoDB database. The core logic for the **7-Layer Prompt Generation Framework** has been implemented in , which now generates 100 prompts instead of 25. The UI for the Dashboard and Prompts page has been completely rebuilt to match the user's detailed wireframes. Static alerts on the dashboard have been replaced with dynamic Top Opportunities based on actual prompt data.
 
 **Last working item**:
-    - Last item agent was working: The agent was implementing user-requested improvements to the Keyword Analysis feature. This involved:
-        1.  Increasing the number of questions retrieved from the backend from 10 to 25.
-        2.  Adding UI filters to allow users to sort/filter the questions by search volume, difficulty, and intent.
-        3.  Increasing the size and visibility of the 12-month search trend sparkline graph.
-    - Status: IN PROGRESS
+    - Last item agent was working: The user requested the implementation of an 8th Layer to the prompt generation framework. This new layer is responsible for Real-World Prompt Discovery by querying external AI models (ChatGPT, Claude, Gemini, Perplexity) to find what questions users are actually asking. This will also provide the data needed for future analytics features, such as tracking brand mentions and visibility scores on each platform.
+    - Status: NOT STARTED
     - Agent Testing Done: N
-    - Which testing method agent to use? Frontend testing agent. The agent should be instructed to:
-        1.  Verify the Keyword Analysis page loads at least 25 questions.
-        2.  Confirm that filter controls (dropdowns, sliders) are visible on the page.
-        3.  Test that applying a filter correctly reduces or reorders the list of questions.
-        4.  Verify via screenshot that the trend sparkline graph is visually larger and clearer than before.
+    - Which testing method agent to use? backend testing agent
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Implement filters and enhanced trend visibility for Keyword Analysis (Priority: P0)
-  - Issue 2: Chatbot is non-functional due to an inactive webhook (Priority: P1)
-  - Issue 3: Authentication system requires user validation after recurring failures (Priority: P2)
-  - Issue 4: Marketing pages have placeholder content (Priority: P3)
+  - Issue 1: Synchronous prompt generation causes performance bottlenecks (Priority: P1)
   
   **Issues Detail:**
-  - **Issue 1: Implement filters and enhanced trend visibility for Keyword Analysis**
-     - **Description:** The user wants to filter the list of 25 keyword-related questions and see a larger trend graph.
-     - **Attempted fixes:** The agent has modified  to increase the question limit to 25 and updated  to add filter controls and CSS for a larger sparkline. The work is not yet tested.
-     - **Next debug checklist:** 
-        1.  Restart backend and frontend services.
-        2.  Test the  endpoint to confirm it returns 25 questions.
-        3.  Use the frontend testing agent to verify the UI changes (filters present, graph is larger).
-        4.  Manually test the filter functionality to ensure it works as expected.
-     - **Why fix this issue and what will be achieved with the fix?** This will complete the user's latest feature enhancement request, making the Keyword Analysis tool more powerful and user-friendly.
-     - **Status:**  IN PROGRESS
-     - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on other issue:** None
-
-  - **Issue 2: Chatbot is non-functional due to an inactive webhook**
-     - **Description:** The chatbot sends messages to a backend proxy, which forwards them to an n8n webhook URL provided by the user. However, the latest URL () is in test mode and returns a 404 error, preventing the chatbot from receiving responses.
-     - **Attempted fixes:** The agent has correctly implemented a backend proxy to handle CORS and has updated the webhook URL multiple times. It correctly diagnosed the test mode issue from logs and informed the user how to activate it.
+  - **Issue 1: Synchronous prompt generation causes performance bottlenecks**
+     - **Description:** The entire prompt generation process, which includes website crawling and (soon) multiple external AI API calls, runs in a single, synchronous API request during user registration. This has been a recurring performance complaint and will become a critical failure point with the addition of Layer 8.
+     - **Attempted fixes:** None in this session.
      - **Next debug checklist:**
-        1. Await user confirmation that the webhook has been activated in their n8n instance or that they have provided a permanent production URL (typically not containing ).
-     - **Why fix this issue and what will be achieved with the fix?** This will make the user-requested chatbot feature fully functional.
-     - **Status:**  BLOCKED (Awaiting user action on n8n.cloud)
-     - **Is recurring issue?** Y
-     - **Should Test frontend/backend/both after fix?** frontend
-     - **Blocked on other issue:** None
-
-  - **Issue 3: Authentication system requires user validation after recurring failures**
-     - **Description:** The authentication system has failed multiple times. Although the agent recently fixed a  on the backend that was preventing login and publisher creation, the system's history of unreliability makes it a high-risk area.
-     - **Attempted fixes:** A major refactor from a hybrid PostgreSQL/MongoDB setup to a pure MongoDB implementation was done previously. The most recent fix was adding a missing  import in . Agent self-tested via  and confirmed it works.
-     - **Next debug checklist:**
-        1.  The user needs to perform a full end-to-end test: register a new user, log in, log out, log back in, and confirm they can access features like Content Management.
-     - **Why fix this issue and what will be achieved with the fix?** To ensure the application is usable and stable. This is core functionality.
-     - **Status:**  USER VERIFICATION PENDING
-     - **Is recurring issue?** Y
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on other issue:** None
-
-  - **Issue 4: Marketing pages have placeholder content**
-     - **Description:** The marketing site pages (About, Pricing, Features, etc.) were created but contain only placeholder titles and text.
-     - **Attempted fixes:** None in the recent session. This task has been pending.
-     - **Next debug checklist:**
-        1.  Review each marketing page file in .
-        2.  Populate the pages with relevant, high-quality content.
-        3.  Implement SEO metadata (titles, descriptions) using .
-     - **Why fix this issue and what will be achieved with the fix?** To complete the marketing website as requested by the user.
+        1.  After implementing Layer 8, propose and implement a background job queue.
+        2.  For Python/FastAPI, a good choice would be **Celery with Redis**.
+        3.  Refactor the  function in  to enqueue the long-running prompt generation task instead of executing it directly.
+        4.  Create a new API endpoint for the frontend to poll for the status of the generation job.
+     - **Why fix this issue and what will be achieved with the fix?** To prevent API timeouts, provide a responsive user experience, and build a scalable architecture that can handle long-running tasks.
      - **Status:**  NOT STARTED
-     - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** frontend
+     - **Is recurring issue?** Y
+     - **Should Test frontend/backend/both after fix?** both
      - **Blocked on other issue:** None
 
 **In progress Task List**:
-  - **Task 1: Implement filters and improved trend graph for Keyword Analysis (Priority: P0)**
-     - **Where to resume:** The agent has modified  and . The next step is to restart the services and begin testing.
-     - **What will be achieved with this?** The keyword analysis page will show a list of 25 questions with controls to filter them by volume, difficulty, and intent, along with a more visible trend graph.
-     - **Status:**  IN PROGRESS
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on something:** None
+- None.
 
 **Upcoming and Future Tasks**
 *   **Upcoming Tasks:**
-    *   (P1) **Phase 2: Predictive Visibility Score:** Define and implement a formula to calculate a visibility score for content based on keyword analysis insights and AI model templates.
-    *   (P2) **Phase 3: Competitor Comparison:** Implement the feature to identify and display visibility scores for competitor websites on the same keyword.
-    *   (P3) Populate marketing pages with real content and SEO metadata.
+    *   **Task 1: Implement Layer 8: Real-World AI Platform Discovery (P0):**
+        - **File:** 
+        - **Action:** Following the user's detailed specification, implement the logic to query OpenAI, Claude, Gemini, and Perplexity.
+        - **Critical Prerequisite:** Use the  subagent to get the implementation playbooks and API key handling instructions for all four AI platforms.
+        - **Goal:** Augment the 100 generated prompts with real-world data and structure the output to support platform-specific analytics.
+
 *   **Future Tasks:**
-    *   Implement Content Monetization Feature.
-    *   Implement core MVP features: AI Summary Visibility Tracker, Real-Time AI Summary Alerts, Attribution & Micro-Payment API, AI Content Syndication.
+    *   **Task 2: Build Prompt Monitoring & Analytics Features (P1):**
+        - **Files:** New frontend components for  and  pages.
+        - **Action:** Build the UI to display the data gathered from Layer 8, including visibility scores, competitor mentions, and platform-specific filtering.
+    *   **Task 3: Implement Pagination for Prompts Page (P2):**
+        - **File:** 
+        - **Action:** Add pagination to the prompts table to handle the new 100-prompt limit without overwhelming the UI.
 
 **Completed work in this session**
-- **Advanced Keyword Monitoring (Phase 1):**
-  - Integrated OpenRouter and Tavily Search APIs for live data.
-  - Implemented backend services and API endpoints for keyword analysis, content recommendations, and template management.
-  - Built a new  page with tabs for  and .
-  - Implemented features to display keyword difficulty, 12-month search trends, and keyword intent classification (e.g., Informational, Transactional).
-  - Added functionality for users to add, view, and delete multiple keywords for a single piece of content.
-- **UX/UI Fixes & Enhancements:**
-  - Replaced old, duplicated keyword/recommendation pages with new, unified views that link to the  page.
-  - Added a modal to preview content after AI-powered recommendations are implemented.
-  - Fixed multiple frontend bugs related to data fetching, state management, and rendering that prevented the new features from appearing.
-- **Backend Bug Fixes:**
-  - Resolved a critical authentication bug ( in ) that blocked logins and content creation.
-  - Fixed several JSON parsing errors in the backend services that were causing the OpenRouter API calls to fail and return fallback data.
-- **Chatbot Integration:**
-  - Successfully integrated the Chatbot component into the Home page UI.
-  - Created a backend proxy endpoint () to solve CORS issues.
+- **7-Layer Prompt Generation Framework:** Rewrote  to implement the user's comprehensive framework for generating high-quality prompts.
+- **UI Overhaul based on Wireframes:** Rebuilt the  and  components with new layouts, charts, tables, and a prompt detail modal as specified by the user.
+- **Increased Prompt Count:** Updated the backend to generate and rank 100 prompts instead of 25.
+- **7-Factor Scoring Algorithm:** Added the 'Intent' metric to the scoring model and adjusted all scoring functions to use a 0-100 scale.
+- **Dynamic Dashboard Alerts:** Fixed the static Recent Alerts section by converting it into a Top Opportunities list that dynamically displays the highest-ranked prompts.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+   - See All Pending/In progress Issue list. The primary unaddressed issue is the lack of background jobs for long-running tasks.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork:** Authentication failures. This was a critical issue in the previous session (due to a DB migration) and recurred in this session (due to a  in the code). The pattern of auth being fragile persists.
-  - **Recurrence count:** 2+
-  - **Status:** USER VERIFICATION PENDING
+  - None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, MongoDB (), JWT
--   **Frontend:** React, React Router, Tailwind CSS, 
--   **3rd Party Integrations:**
-    -   **OpenRouter:** Used via the  library for access to various LLMs to generate questions and classify intent.
-    -   **Tavily Search API:** Used via the  library to get search results for calculating keyword difficulty and search trends.
+*   **Backend:** FastAPI, Pydantic
+*   **Frontend:** React, TailwindCSS
+*   **Database:** MongoDB
+*   **Core Logic:** A sophisticated, multi-layered prompt generation and scoring engine in .
+*   **External APIs:** Firecrawl (implemented), Tavily (implemented). OpenAI, Anthropic, Gemini, Perplexity (to be implemented).
 
 **key DB schema**
-  - **users:** 
-  - **publishers:** 
-  - **content:** 
-  - **keywords:**  (newly added)
+  - **prompts:** This collection stores the generated prompts. The schema has been expanded to include:
+    - , , , 
+    - A full set of scoring metrics: , , , , , , , .
+    - An  dictionary to flexibly store additional data from the generation process.
 
 **changes in tech stack**
-  - **Added Backend Dependencies:**  (for OpenRouter) and  (for Tavily API).
+- The user **decided against** a major tech stack migration to Node.js/Next.js/PostgreSQL and agreed to continue with the existing FastAPI/React/MongoDB stack.
 
-**All files**
-- **Created/Rewritten:**
-  - : Central service for all keyword analysis features.
-  - : Manages content templates.
-  - : Generates AI recommendations.
-  - : New core UI for content optimization.
-  - : UI for displaying keyword data.
-  - : UI for recommendations.
-  -  (overwritten): Now a list view linking to .
-  -  (overwritten): Now a list view.
-- **Significantly Updated:**
-  - : Added numerous API endpoints for new features and fixed critical auth bugs.
-  - : Added API keys for OpenRouter and Tavily.
-  - : Added new route for the content detail page.
+**All files of reference**
+*   : The most critical and heavily modified file, containing the entire prompt generation framework.
+*   : Contains the API endpoints and data models.
+*   : The new dashboard UI.
+*   : The new prompts page UI.
 
 **Areas that need refactoring**:
-- The  file has grown significantly and now contains logic for authentication, chatbot proxy, and all API endpoints. The new feature endpoints should be modularized into their own FastAPI  files (e.g., ).
+*   : This file has grown to over 1000 lines. It should be broken down into smaller, more focused modules (e.g., a directory for each layer of the framework, a separate scoring module).
+*   **Asynchronous Operations:** The entire prompt generation flow in the  endpoint needs to be refactored into a background task using a job queue (e.g., Celery and Redis) to prevent API timeouts and improve user experience.
 
 **key api endpoints**
--  (GET): Returns analysis for a keyword (questions, trends, difficulty, intent).
--  (POST): Generates optimization recommendations for content.
--  (POST): Add a keyword to a content item.
--  (GET): Get all keywords for a content item.
--  (DELETE): Delete a keyword.
--  (POST): Proxies requests to the user's n8n webhook.
--  (POST)
--  (POST)
+*   : Onboards a new user, which triggers the website crawl and the entire multi-layer prompt generation process.
+*   : Retrieves the list of generated prompts for the signed-in user.
+*   : Fetches aggregated statistics for the dashboard charts.
 
 **Critical Info for New Agent**
-- **API Keys are Set:** The user's keys for OpenRouter and Tavily are in  and are required for the main features to work. Do not ask the user for them.
-- **Focus on :** Most of the recent feature work is located in the  route, which renders the  component and its children (, ).
-- **Authentication is Fragile:** Treat the authentication system as high-risk. It has failed multiple times. Verify login/registration functionality before proceeding with other tasks.
-- **Chatbot is Blocked:** The chatbot feature is blocked pending user action on their n8n.cloud account to activate the webhook. Do not attempt to debug the chatbot code itself.
+1.  **Follow the User's Spec:** The user is highly detailed. Your primary source of truth is the user's last few messages outlining the 7-Layer and 8-Layer frameworks. Adhere to them strictly.
+2.  **Implement Layer 8 Next:** Your immediate task is to implement the 8th Layer of prompt generation. The user has provided a complete conceptual implementation guide in their messages.
+3.  **Use Integration Subagent:** Before writing any code for Layer 8, you **MUST** call the  subagent to get the correct, up-to-date playbooks for integrating with **OpenAI, Anthropic, Google Gemini, and Perplexity**. This is essential for handling APIs and credentials correctly.
+4.  **Plan for Background Jobs:** The addition of Layer 8 will make the synchronous generation process unacceptably slow. After implementing Layer 8, you must proactively propose a move to a background job queue (e.g., Celery/Redis) to solve this architectural problem.
 
-**documents created in this job**
-  - 
-  - 
+**documents and test_reports created in this job**
+- None.
 
-**Last 5 User Messages and any pending user messages**
-1.  **User:** Added AEO as a keyword but sees no response. **Status: Resolved.** Agent fixed a frontend data-fetching bug.
-2.  **User:** Can see keywords now, but wants keyword difficulty percentage for each question. **Status: Completed.** Agent implemented the difficulty feature using Tavily API data.
-3.  **User:** Also wants 12-month search trends and keyword intent for each question. **Status: Completed.** Agent implemented both features.
-4.  **User:** Wants all questions (not just top 10), filters (volume, difficulty, intent), and a more visible trend graph. **Status: IN PROGRESS.** This is the last task the agent was working on.
-5.  There are no other pending user messages.
+**Last 10 User Messages and any pending HUMAN messages**
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 
 **Project Health Check:**
-*   **Broken:**
-    *   The Chatbot is non-functional as it points to an inactive test webhook on n8n.cloud.
-*   **Mocked:**
-    *   OTP generation for 2FA is mocked (codes are printed to backend logs).
-    *   The core SaaS features from the original problem statement (Visibility Tracker, GEO Recommendations, etc.) are still not implemented.
+*   **Broken:** The synchronous nature of the prompt generation process is a critical architectural flaw that will lead to API timeouts once Layer 8 is implemented.
+*   **Mocked:** The UI for monitoring and analytics exists conceptually in the wireframes but is not yet built. The data foundation for it is the next step.
+
+**3rd Party Integrations**
+*   **Implemented:**
+    *   Firecrawl (Website Crawling)
+    *   Tavily (Used within  for Reddit mining)
+*   **To Be Implemented (P0 Task):**
+    *   OpenAI (GPT)
+    *   Anthropic (Claude)
+    *   Google (Gemini)
+    *   Perplexity AI
+    *   **Note:** The agent must use  for these.
 
 **Testing status**
-  - **Testing agent used after significant changes:** YES, used multiple times to test chatbot functionality.
-  - **Troubleshoot agent used after agent stuck in loop:** NO
-  - **Test files created:** None
-  - **Known regressions:** Authentication has been a recurring point of failure.
+  - Testing agent used after significant changes: YES. The agent successfully used the testing subagent to validate the 7-Layer framework and the new UI components.
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: None.
+  - Known regressions: None.
 
 **Credentials to test flow:**
-Use the registration page to create new test users. The required OTP for verification can be retrieved from the development endpoint  or by tailing the backend logs.</analysis>
+New users can be created via the registration page. No static credentials are needed.
+
+**What agent forgot to execute**
+The agent has not yet addressed the critical performance issue of long-running, synchronous tasks, despite it being a known recurring problem. With the user's request to add even more external API calls in Layer 8, this should have been raised as a necessary architectural change (i.e., implementing a background job queue).</analysis>
