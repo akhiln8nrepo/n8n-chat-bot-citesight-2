@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import axios from '../utils/axios';
 import {
   BarChart3, TrendingUp, TrendingDown, Eye, Target, Users, Award,
