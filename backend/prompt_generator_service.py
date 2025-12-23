@@ -428,90 +428,191 @@ class PromptPatternGenerator:
         
         year = "2024"
         
-        # Source 1: Category-based prompts (what customers ask about the INDUSTRY)
-        for category in categories[:5]:
+        # ============================================
+        # SOURCE 1: CATEGORY SEARCH (Industry-level queries)
+        # What customers ask about the INDUSTRY in general
+        # ============================================
+        for category in categories[:8]:
             prompts.extend([
+                # Discovery patterns
                 {"prompt": f"Best {category} {year}", "source": "category_search", "category": category},
                 {"prompt": f"Top rated {category}", "source": "category_search", "category": category},
                 {"prompt": f"What is the best {category}?", "source": "category_search", "category": category},
+                {"prompt": f"Top 10 {category} {year}", "source": "category_search", "category": category},
+                # Buying patterns
                 {"prompt": f"How to choose {category}", "source": "category_search", "category": category},
                 {"prompt": f"{category} buying guide", "source": "category_search", "category": category},
+                {"prompt": f"What to look for in {category}", "source": "category_search", "category": category},
+                # Comparison patterns
+                {"prompt": f"Best {category} brands", "source": "category_search", "category": category},
+                {"prompt": f"{category} comparison {year}", "source": "category_search", "category": category},
             ])
         
-        # Source 2: Brand + Product prompts
+        # ============================================
+        # SOURCE 2: PRODUCT DISCOVERY (Brand + Product specific)
+        # Queries about specific products the brand offers
+        # ============================================
         specific_products = products.get('searchableProducts', [])
-        for prod in specific_products[:5]:
+        for prod in specific_products[:10]:
             prod_name = prod.get('name', '')
             if prod_name:
                 prompts.extend([
                     {"prompt": f"{brand} {prod_name} review", "source": "product_discovery", "product": prod_name},
                     {"prompt": f"Is {brand} {prod_name} worth it?", "source": "product_discovery", "product": prod_name},
                     {"prompt": f"{brand} {prod_name} pros and cons", "source": "product_discovery", "product": prod_name},
+                    {"prompt": f"{brand} {prod_name} {year} review", "source": "product_discovery", "product": prod_name},
+                    {"prompt": f"Should I buy {brand} {prod_name}?", "source": "product_discovery", "product": prod_name},
                 ])
         
-        # Source 3: Competitor comparison prompts
-        for competitor in competitors[:3]:
+        # Brand-level discovery
+        prompts.extend([
+            {"prompt": f"{brand} review", "source": "product_discovery", "product": "brand"},
+            {"prompt": f"Is {brand} a good brand?", "source": "product_discovery", "product": "brand"},
+            {"prompt": f"{brand} quality review", "source": "product_discovery", "product": "brand"},
+            {"prompt": f"Best {brand} products {year}", "source": "product_discovery", "product": "brand"},
+            {"prompt": f"{brand} {year} lineup", "source": "product_discovery", "product": "brand"},
+            {"prompt": f"What is {brand} known for?", "source": "product_discovery", "product": "brand"},
+        ])
+        
+        # ============================================
+        # SOURCE 3: COMPETITOR COMPARISON
+        # Brand vs Competitor queries (high business value)
+        # ============================================
+        for competitor in competitors[:5]:
             prompts.extend([
+                # Direct comparisons
                 {"prompt": f"{brand} vs {competitor}", "source": "competitor_comparison", "competitor": competitor},
+                {"prompt": f"{brand} vs {competitor} {year}", "source": "competitor_comparison", "competitor": competitor},
                 {"prompt": f"Is {brand} better than {competitor}?", "source": "competitor_comparison", "competitor": competitor},
                 {"prompt": f"{brand} or {competitor} - which is better?", "source": "competitor_comparison", "competitor": competitor},
+                {"prompt": f"{brand} vs {competitor} comparison", "source": "competitor_comparison", "competitor": competitor},
+                {"prompt": f"Why choose {brand} over {competitor}?", "source": "competitor_comparison", "competitor": competitor},
+                {"prompt": f"{competitor} alternative", "source": "competitor_comparison", "competitor": competitor},
             ])
             
             # Category-specific comparisons
-            for category in categories[:2]:
-                prompts.append({
-                    "prompt": f"{brand} vs {competitor} {category}",
-                    "source": "competitor_comparison",
-                    "competitor": competitor
-                })
+            for category in categories[:3]:
+                prompts.extend([
+                    {"prompt": f"{brand} vs {competitor} {category}", "source": "competitor_comparison", "competitor": competitor},
+                    {"prompt": f"Best {category}: {brand} or {competitor}?", "source": "competitor_comparison", "competitor": competitor},
+                ])
         
-        # Source 4: Use case prompts
-        for use_case in use_cases[:5]:
-            for category in categories[:2]:
+        # ============================================
+        # SOURCE 4: USE CASE QUERIES
+        # Queries for specific activities/needs
+        # ============================================
+        for use_case in use_cases[:10]:
+            prompts.extend([
+                {"prompt": f"Best {categories[0] if categories else 'product'} for {use_case}", "source": "use_case", "use_case": use_case},
+                {"prompt": f"{categories[0] if categories else 'product'} for {use_case}", "source": "use_case", "use_case": use_case},
+                {"prompt": f"What {categories[0] if categories else 'product'} for {use_case}?", "source": "use_case", "use_case": use_case},
+            ])
+            
+            # Cross with multiple categories
+            for category in categories[1:4]:
                 prompts.append({
                     "prompt": f"Best {category} for {use_case}",
                     "source": "use_case",
                     "use_case": use_case
                 })
         
-        # Source 5: Audience/Persona-based prompts
-        for audience in audiences[:4]:
+        # ============================================
+        # SOURCE 5: PERSONA-BASED QUERIES
+        # Questions different customer types ask
+        # ============================================
+        for audience in audiences[:5]:
             persona = audience.get('personaName', '')
             needs = audience.get('needs', [])
             questions = audience.get('typicalQuestions', [])
+            pain_points = audience.get('painPoints', [])
             
-            for question in questions[:3]:
+            # Persona questions
+            for question in questions[:5]:
                 prompts.append({
                     "prompt": question.replace('X', categories[0] if categories else 'product'),
                     "source": "persona_based",
                     "persona": persona
                 })
             
-            for need in needs[:2]:
+            # Need-based queries
+            for need in needs[:3]:
+                prompts.extend([
+                    {"prompt": f"Best {categories[0] if categories else 'solution'} for {need}", "source": "persona_based", "persona": persona},
+                    {"prompt": f"{categories[0] if categories else 'product'} that helps with {need}", "source": "persona_based", "persona": persona},
+                ])
+            
+            # Pain point queries
+            for pain in pain_points[:3]:
                 prompts.append({
-                    "prompt": f"Best {categories[0] if categories else 'solution'} for {need}",
+                    "prompt": f"Best {categories[0] if categories else 'solution'} for {pain}",
                     "source": "persona_based",
                     "persona": persona
                 })
         
-        # Source 6: Problem/Solution prompts
-        for problem in problems[:5]:
-            prompts.append({
-                "prompt": f"How to solve {problem}",
-                "source": "problem_solution",
-                "problem": problem
-            })
-            prompts.append({
-                "prompt": f"Best solution for {problem}",
-                "source": "problem_solution",
-                "problem": problem
-            })
+        # ============================================
+        # SOURCE 6: PROBLEM/SOLUTION QUERIES
+        # Pain point and solution-focused queries
+        # ============================================
+        for problem in problems[:8]:
+            prompts.extend([
+                {"prompt": f"How to solve {problem}", "source": "problem_solution", "problem": problem},
+                {"prompt": f"Best solution for {problem}", "source": "problem_solution", "problem": problem},
+                {"prompt": f"Help with {problem}", "source": "problem_solution", "problem": problem},
+                {"prompt": f"{problem} solutions {year}", "source": "problem_solution", "problem": problem},
+            ])
         
-        # Source 7: Feature/Technology prompts
-        for feature in features[:5]:
-            prompts.append({"prompt": f"What is {feature}?", "source": "feature_discovery", "feature": feature})
-            for category in categories[:1]:
-                prompts.append({"prompt": f"{category} with {feature}", "source": "feature_discovery", "feature": feature})
+        # ============================================
+        # SOURCE 7: FEATURE/TECHNOLOGY QUERIES
+        # Queries about specific features or technologies
+        # ============================================
+        for feature in features[:8]:
+            prompts.extend([
+                {"prompt": f"What is {feature}?", "source": "feature_discovery", "feature": feature},
+                {"prompt": f"{feature} explained", "source": "feature_discovery", "feature": feature},
+                {"prompt": f"Is {feature} worth it?", "source": "feature_discovery", "feature": feature},
+                {"prompt": f"Best {categories[0] if categories else 'product'} with {feature}", "source": "feature_discovery", "feature": feature},
+            ])
+        
+        # ============================================
+        # SOURCE 8: TRANSACTIONAL QUERIES
+        # High-intent purchase queries
+        # ============================================
+        prompts.extend([
+            {"prompt": f"Where to buy {brand}", "source": "transactional", "type": "purchase"},
+            {"prompt": f"{brand} discount code {year}", "source": "transactional", "type": "discount"},
+            {"prompt": f"{brand} sale {year}", "source": "transactional", "type": "sale"},
+            {"prompt": f"{brand} price", "source": "transactional", "type": "price"},
+            {"prompt": f"Best {brand} deals", "source": "transactional", "type": "deals"},
+            {"prompt": f"{brand} coupon code", "source": "transactional", "type": "coupon"},
+            {"prompt": f"Cheapest place to buy {brand}", "source": "transactional", "type": "price"},
+        ])
+        
+        for category in categories[:3]:
+            prompts.extend([
+                {"prompt": f"Where to buy {category}", "source": "transactional", "type": "purchase"},
+                {"prompt": f"{category} on sale", "source": "transactional", "type": "sale"},
+                {"prompt": f"Cheap {category}", "source": "transactional", "type": "budget"},
+                {"prompt": f"Best {category} under $100", "source": "transactional", "type": "budget"},
+            ])
+        
+        # ============================================
+        # SOURCE 9: SUPPORT/HOW-TO QUERIES
+        # Customer support and usage queries
+        # ============================================
+        prompts.extend([
+            {"prompt": f"How to use {brand}", "source": "support", "type": "usage"},
+            {"prompt": f"{brand} return policy", "source": "support", "type": "returns"},
+            {"prompt": f"{brand} warranty", "source": "support", "type": "warranty"},
+            {"prompt": f"{brand} customer service", "source": "support", "type": "service"},
+            {"prompt": f"How to contact {brand}", "source": "support", "type": "contact"},
+        ])
+        
+        for category in categories[:3]:
+            prompts.extend([
+                {"prompt": f"How to clean {category}", "source": "support", "type": "care"},
+                {"prompt": f"How to maintain {category}", "source": "support", "type": "care"},
+                {"prompt": f"{category} sizing guide", "source": "support", "type": "sizing"},
+            ])
         
         # Remove duplicates
         seen = set()
@@ -521,7 +622,7 @@ class PromptPatternGenerator:
                 seen.add(p['prompt'].lower())
                 unique_prompts.append(p)
         
-        return unique_prompts[:50]  # Limit to 50 for scoring
+        return unique_prompts[:150]  # Return up to 150 for scoring, top 100 will be kept
 
 
 # ==========================================
