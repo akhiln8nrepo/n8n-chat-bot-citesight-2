@@ -911,6 +911,357 @@ class RelevanceScorer:
 
 
 # ==========================================
+# LAYER 8: REAL-WORLD AI PLATFORM DISCOVERY
+# ==========================================
+
+class AIplatformDiscovery:
+    """
+    Layer 8: Query multiple AI platforms (ChatGPT, Claude, Gemini, Perplexity)
+    to discover real-world questions users are asking.
+    
+    This provides:
+    1. Real prompts users actually ask AI chatbots
+    2. Platform-specific data for analytics (visibility, mentions, etc.)
+    3. Foundation for tracking brand presence across AI platforms
+    """
+    
+    # OpenRouter model mappings for each AI platform
+    PLATFORM_MODELS = {
+        'chatgpt': {
+            'model': 'openrouter/openai/gpt-4o-mini',
+            'display_name': 'ChatGPT (OpenAI)',
+            'has_web_search': False
+        },
+        'claude': {
+            'model': 'openrouter/anthropic/claude-3-haiku-20240307',
+            'display_name': 'Claude (Anthropic)',
+            'has_web_search': False
+        },
+        'gemini': {
+            'model': 'openrouter/google/gemini-flash-1.5',
+            'display_name': 'Gemini (Google)',
+            'has_web_search': False
+        },
+        'perplexity': {
+            'model': 'openrouter/perplexity/llama-3.1-sonar-small-128k-online',
+            'display_name': 'Perplexity AI',
+            'has_web_search': True  # Perplexity has built-in web search
+        }
+    }
+    
+    @classmethod
+    async def discover_prompts_from_all_platforms(
+        cls, 
+        company_intel: Dict, 
+        products: Dict,
+        audiences: List[Dict]
+    ) -> Dict:
+        """
+        Query all AI platforms to discover real-world prompts.
+        
+        Returns:
+            {
+                'discovered_prompts': List[Dict],  # New prompts discovered
+                'platform_responses': Dict,  # Raw responses per platform
+                'platform_analytics': Dict   # Analytics data per platform
+            }
+        """
+        brand = company_intel.get('companyName', 'Company')
+        industry = company_intel.get('industry', 'Business')
+        categories = products.get('mainCategories', []) or company_intel.get('productCategories', [])
+        competitors = company_intel.get('competitors', [])
+        
+        all_discovered_prompts = []
+        platform_responses = {}
+        platform_analytics = {}
+        
+        # Query each platform concurrently
+        tasks = []
+        for platform_key, platform_config in cls.PLATFORM_MODELS.items():
+            task = cls._query_platform(
+                platform_key=platform_key,
+                platform_config=platform_config,
+                brand=brand,
+                industry=industry,
+                categories=categories,
+                competitors=competitors
+            )
+            tasks.append(task)
+        
+        # Execute all platform queries
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Process results
+        for platform_key, result in zip(cls.PLATFORM_MODELS.keys(), results):
+            if isinstance(result, Exception):
+                logger.error(f"Platform {platform_key} query failed: {result}")
+                platform_responses[platform_key] = {'error': str(result)}
+                platform_analytics[platform_key] = cls._create_error_analytics(platform_key)
+                continue
+            
+            platform_responses[platform_key] = result.get('raw_response', {})
+            platform_analytics[platform_key] = result.get('analytics', {})
+            
+            # Add discovered prompts with platform attribution
+            for prompt_data in result.get('prompts', []):
+                prompt_data['ai_discovery_platform'] = platform_key
+                prompt_data['ai_platform_display'] = cls.PLATFORM_MODELS[platform_key]['display_name']
+                all_discovered_prompts.append(prompt_data)
+        
+        # Deduplicate discovered prompts
+        seen = set()
+        unique_prompts = []
+        for p in all_discovered_prompts:
+            prompt_lower = p.get('prompt', '').lower().strip()
+            if prompt_lower and prompt_lower not in seen:
+                seen.add(prompt_lower)
+                unique_prompts.append(p)
+        
+        logger.info(f"Layer 8: Discovered {len(unique_prompts)} unique prompts from {len(cls.PLATFORM_MODELS)} AI platforms")
+        
+        return {
+            'discovered_prompts': unique_prompts,
+            'platform_responses': platform_responses,
+            'platform_analytics': platform_analytics
+        }
+    
+    @classmethod
+    async def _query_platform(
+        cls,
+        platform_key: str,
+        platform_config: Dict,
+        brand: str,
+        industry: str,
+        categories: List[str],
+        competitors: List[str]
+    ) -> Dict:
+        """
+        Query a single AI platform to discover prompts users ask.
+        """
+        model = platform_config['model']
+        display_name = platform_config['display_name']
+        
+        # Build discovery prompt
+        categories_str = ', '.join(categories[:5]) if categories else industry
+        competitors_str = ', '.join(competitors[:3]) if competitors else 'major brands'
+        
+        discovery_prompt = f"""You are a market research analyst. I need to understand what questions real users are asking AI chatbots about {industry} products and services.
+
+CONTEXT:
+- Industry: {industry}
+- Product Categories: {categories_str}
+- Key Competitors: {competitors_str}
+- Brand to analyze: {brand}
+
+TASK:
+Generate 15-20 realistic questions that users would actually type into an AI chatbot when:
+1. Researching {industry} products
+2. Comparing options and brands
+3. Looking for recommendations
+4. Trying to make a purchase decision
+5. Seeking help with {industry}-related problems
+
+For each question, indicate:
+- The user's likely intent (informational, comparison, purchase, support)
+- Whether it's brand-specific, category-generic, or competitor-focused
+- The likely buyer stage (awareness, consideration, decision)
+
+Return a JSON array:
+[
+    {{
+        "prompt": "the actual question users would ask",
+        "intent": "informational|comparison|transactional|support",
+        "focus": "brand|category|competitor",
+        "buyer_stage": "awareness|consideration|decision",
+        "search_volume_estimate": "high|medium|low"
+    }}
+]
+
+Generate diverse, realistic questions that cover different user needs and stages.
+Return ONLY valid JSON array, no markdown or explanation."""
+
+        try:
+            response = completion(
+                model=model,
+                messages=[{"role": "user", "content": discovery_prompt}],
+                api_base="https://openrouter.ai/api/v1",
+                api_key=OPENROUTER_API_KEY,
+                temperature=0.7,
+                max_tokens=3000
+            )
+            
+            content = response.choices[0].message.content
+            parsed = parse_llm_json(content)
+            
+            prompts = []
+            if isinstance(parsed, list):
+                prompts = parsed
+            elif isinstance(parsed, dict) and 'prompts' in parsed:
+                prompts = parsed['prompts']
+            
+            # Standardize prompt format
+            standardized_prompts = []
+            for p in prompts:
+                if isinstance(p, dict) and p.get('prompt'):
+                    standardized_prompts.append({
+                        'prompt': p.get('prompt', ''),
+                        'source': 'ai_platform_discovery',
+                        'intent': cls._map_intent(p.get('intent', 'informational')),
+                        'focus': p.get('focus', 'category'),
+                        'buyer_stage': p.get('buyer_stage', 'awareness'),
+                        'volume_estimate': p.get('search_volume_estimate', 'medium')
+                    })
+                elif isinstance(p, str):
+                    standardized_prompts.append({
+                        'prompt': p,
+                        'source': 'ai_platform_discovery',
+                        'intent': 'informational',
+                        'focus': 'category',
+                        'buyer_stage': 'awareness',
+                        'volume_estimate': 'medium'
+                    })
+            
+            # Build analytics data
+            analytics = cls._build_platform_analytics(
+                platform_key=platform_key,
+                brand=brand,
+                competitors=competitors,
+                prompts=standardized_prompts,
+                raw_content=content
+            )
+            
+            logger.info(f"Platform {display_name}: Discovered {len(standardized_prompts)} prompts")
+            
+            return {
+                'prompts': standardized_prompts,
+                'raw_response': {'content_length': len(content)},
+                'analytics': analytics
+            }
+            
+        except Exception as e:
+            logger.error(f"Error querying {display_name}: {e}")
+            raise
+    
+    @classmethod
+    def _map_intent(cls, intent: str) -> str:
+        """Map various intent labels to standard classification"""
+        intent = intent.lower() if intent else 'informational'
+        
+        mapping = {
+            'informational': 'informational',
+            'information': 'informational',
+            'info': 'informational',
+            'comparison': 'commercial_investigation',
+            'compare': 'commercial_investigation',
+            'research': 'commercial_investigation',
+            'commercial': 'commercial_investigation',
+            'transactional': 'transactional',
+            'purchase': 'transactional',
+            'buy': 'transactional',
+            'support': 'support',
+            'help': 'support',
+            'navigational': 'navigational'
+        }
+        
+        return mapping.get(intent, 'informational')
+    
+    @classmethod
+    def _build_platform_analytics(
+        cls,
+        platform_key: str,
+        brand: str,
+        competitors: List[str],
+        prompts: List[Dict],
+        raw_content: str
+    ) -> Dict:
+        """
+        Build analytics data for a platform's response.
+        This data will be used for visibility scores and competitor tracking.
+        """
+        brand_lower = brand.lower() if brand else ''
+        content_lower = raw_content.lower()
+        
+        # Check brand mentions
+        brand_mentioned = brand_lower in content_lower if brand_lower else False
+        brand_mention_count = content_lower.count(brand_lower) if brand_lower else 0
+        
+        # Check competitor mentions
+        competitor_mentions = {}
+        for comp in competitors:
+            comp_lower = comp.lower()
+            mentioned = comp_lower in content_lower
+            count = content_lower.count(comp_lower)
+            competitor_mentions[comp] = {
+                'mentioned': mentioned,
+                'count': count
+            }
+        
+        # Analyze prompt types
+        intent_distribution = {}
+        focus_distribution = {}
+        stage_distribution = {}
+        
+        for p in prompts:
+            intent = p.get('intent', 'informational')
+            focus = p.get('focus', 'category')
+            stage = p.get('buyer_stage', 'awareness')
+            
+            intent_distribution[intent] = intent_distribution.get(intent, 0) + 1
+            focus_distribution[focus] = focus_distribution.get(focus, 0) + 1
+            stage_distribution[stage] = stage_distribution.get(stage, 0) + 1
+        
+        # Calculate visibility indicators
+        total_prompts = len(prompts)
+        brand_focused_prompts = sum(1 for p in prompts if p.get('focus') == 'brand')
+        
+        visibility_score = 0
+        if total_prompts > 0:
+            # Base score on brand focus ratio
+            visibility_score = (brand_focused_prompts / total_prompts) * 50
+            # Add bonus for brand mentions
+            if brand_mentioned:
+                visibility_score += 25
+            # Add bonus for mention frequency
+            visibility_score += min(25, brand_mention_count * 5)
+        
+        return {
+            'platform': platform_key,
+            'platform_display': cls.PLATFORM_MODELS[platform_key]['display_name'],
+            'total_prompts_discovered': total_prompts,
+            'brand_visibility': {
+                'mentioned': brand_mentioned,
+                'mention_count': brand_mention_count,
+                'visibility_score': round(visibility_score, 1)
+            },
+            'competitor_visibility': competitor_mentions,
+            'intent_distribution': intent_distribution,
+            'focus_distribution': focus_distribution,
+            'stage_distribution': stage_distribution,
+            'has_web_search': cls.PLATFORM_MODELS[platform_key]['has_web_search']
+        }
+    
+    @classmethod
+    def _create_error_analytics(cls, platform_key: str) -> Dict:
+        """Create error analytics when platform query fails"""
+        return {
+            'platform': platform_key,
+            'platform_display': cls.PLATFORM_MODELS[platform_key]['display_name'],
+            'total_prompts_discovered': 0,
+            'brand_visibility': {
+                'mentioned': False,
+                'mention_count': 0,
+                'visibility_score': 0
+            },
+            'competitor_visibility': {},
+            'intent_distribution': {},
+            'focus_distribution': {},
+            'stage_distribution': {},
+            'error': True,
+            'has_web_search': cls.PLATFORM_MODELS[platform_key]['has_web_search']
+        }
+
+
+# ==========================================
 # MAIN PROMPT GENERATOR SERVICE
 # ==========================================
 
