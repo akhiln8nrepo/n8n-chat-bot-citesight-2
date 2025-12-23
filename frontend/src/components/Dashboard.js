@@ -111,6 +111,7 @@ const Dashboard = () => {
       'problem_solution': '#F59E0B',
       'feature_discovery': '#14B8A6',
       'reddit_mining': '#F97316',
+      'ai_platform_discovery': '#EC4899',
       // Legacy
       'ai_testing': '#3B82F6',
       'customer_surveys': '#8B5CF6',
