@@ -419,7 +419,6 @@ class PromptPatternGenerator:
         
         prompts = []
         brand = company_intel.get('companyName', 'Brand')
-        industry = company_intel.get('industry', 'Industry')
         categories = products.get('mainCategories', []) or company_intel.get('productCategories', [])
         competitors = company_intel.get('competitors', [])
         features = products.get('features', []) or company_intel.get('keyFeatures', [])
