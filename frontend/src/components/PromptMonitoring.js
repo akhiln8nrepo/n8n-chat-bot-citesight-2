@@ -198,6 +198,7 @@ const PromptMonitoring = () => {
       'problem_solution': 'PROBLEM',
       'feature_discovery': 'FEATURE',
       'reddit_mining': 'REDDIT',
+      'ai_platform_discovery': 'AI DISCOVER',
       // Legacy mappings
       'ai_testing': 'AI TEST',
       'customer_surveys': 'SURVEY',
@@ -217,6 +218,7 @@ const PromptMonitoring = () => {
       'problem_solution': 'bg-yellow-50 text-yellow-700',
       'feature_discovery': 'bg-teal-50 text-teal-600',
       'reddit_mining': 'bg-orange-50 text-orange-600',
+      'ai_platform_discovery': 'bg-pink-50 text-pink-600',
       // Legacy mappings
       'ai_testing': 'bg-blue-50 text-blue-600',
       'customer_surveys': 'bg-purple-50 text-purple-600',
