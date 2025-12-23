@@ -1267,26 +1267,40 @@ Return ONLY valid JSON array, no markdown or explanation."""
 
 class GEOPromptGeneratorService:
     """
-    Main service implementing the 7-Layer GEO Prompt Generation Framework
+    Main service implementing the 8-Layer GEO Prompt Generation Framework
+    
+    Layers 1-7: Pattern-based prompt generation with scoring
+    Layer 8: Real-world AI platform discovery (ChatGPT, Claude, Gemini, Perplexity)
     """
     
     def __init__(self):
         self.competitive_analyzer = CompetitiveAnalyzer()
     
-    async def generate_prompts(self, website_data: Dict, industry: str, competitors: List[str] = None) -> List[Dict]:
+    async def generate_prompts(
+        self, 
+        website_data: Dict, 
+        industry: str, 
+        competitors: List[str] = None,
+        include_layer8: bool = True
+    ) -> Dict:
         """
-        Generate 25 highly relevant prompts using the 7-layer framework
+        Generate 100 highly relevant prompts using the 8-layer framework
         
         Args:
             website_data: Crawled website content
             industry: Industry category
             competitors: List of competitor names
+            include_layer8: Whether to run AI platform discovery (default True)
         
         Returns:
-            List of 25 scored and ranked prompts
+            {
+                'prompts': List of 100 scored and ranked prompts,
+                'platform_analytics': Dict of analytics per AI platform (if Layer 8 enabled),
+                'generation_metadata': Dict of generation statistics
+            }
         """
         
-        logger.info(f"Starting 7-Layer GEO Prompt Generation for industry: {industry}")
+        logger.info(f"Starting 8-Layer GEO Prompt Generation for industry: {industry}")
         
         # Prepare user input
         user_input = {
@@ -1329,8 +1343,36 @@ class GEOPromptGeneratorService:
         logger.info("Layer 6: Analyzing competitive context...")
         # Competition analysis is embedded in scoring
         
-        # LAYER 7: Score and Rank
-        logger.info("Layer 7: Scoring and ranking prompts...")
+        # Initialize analytics
+        platform_analytics = {}
+        layer8_prompts_count = 0
+        
+        # LAYER 8: AI Platform Discovery (NEW)
+        if include_layer8:
+            logger.info("Layer 8: Discovering prompts from AI platforms (ChatGPT, Claude, Gemini, Perplexity)...")
+            try:
+                layer8_result = await AIplatformDiscovery.discover_prompts_from_all_platforms(
+                    company_intel=company_intel,
+                    products=products,
+                    audiences=audiences
+                )
+                
+                # Add discovered prompts to raw_prompts
+                discovered_prompts = layer8_result.get('discovered_prompts', [])
+                raw_prompts.extend(discovered_prompts)
+                layer8_prompts_count = len(discovered_prompts)
+                
+                # Store platform analytics
+                platform_analytics = layer8_result.get('platform_analytics', {})
+                
+                logger.info(f"Layer 8: Added {layer8_prompts_count} prompts from AI platforms")
+                
+            except Exception as e:
+                logger.error(f"Layer 8 failed: {e}")
+                # Continue without Layer 8 data
+        
+        # LAYER 7: Score and Rank ALL prompts (including Layer 8)
+        logger.info("Layer 7: Scoring and ranking all prompts...")
         scorer = RelevanceScorer(company_intel)
         scored_prompts = [scorer.score_prompt(p) for p in raw_prompts]
         
@@ -1340,7 +1382,11 @@ class GEOPromptGeneratorService:
         # Take top 100 prompts and format for database
         top_prompts = scored_prompts[:100]
         
-        # Add rank
+        # Track source distribution
+        source_distribution = {}
+        ai_platform_distribution = {}
+        
+        # Add rank and extract scores
         for i, prompt in enumerate(top_prompts, 1):
             prompt['rank'] = i
             
@@ -1353,9 +1399,40 @@ class GEOPromptGeneratorService:
             prompt['intent_score'] = scores.get('conversionIntent', 50)
             prompt['citation_potential'] = scores.get('citationPotential', 50)
             prompt['brand_relevance'] = scores.get('brandRelevance', 50)
+            
+            # Track source distribution
+            source = prompt.get('source', 'unknown')
+            source_distribution[source] = source_distribution.get(source, 0) + 1
+            
+            # Track AI platform distribution (for Layer 8 prompts)
+            if source == 'ai_platform_discovery':
+                platform = prompt.get('ai_discovery_platform', 'unknown')
+                ai_platform_distribution[platform] = ai_platform_distribution.get(platform, 0) + 1
+        
+        # Build generation metadata
+        generation_metadata = {
+            'total_raw_prompts': len(raw_prompts),
+            'total_scored_prompts': len(scored_prompts),
+            'final_prompts': len(top_prompts),
+            'layer8_enabled': include_layer8,
+            'layer8_prompts_discovered': layer8_prompts_count,
+            'layer8_prompts_in_top100': sum(ai_platform_distribution.values()),
+            'source_distribution': source_distribution,
+            'ai_platform_distribution': ai_platform_distribution,
+            'company_name': company_intel.get('companyName', 'Unknown'),
+            'industry': industry
+        }
         
         logger.info(f"Generated {len(top_prompts)} prompts (Top 100 by score)")
-        return top_prompts
+        logger.info(f"Source distribution: {source_distribution}")
+        if ai_platform_distribution:
+            logger.info(f"AI Platform distribution in top 100: {ai_platform_distribution}")
+        
+        return {
+            'prompts': top_prompts,
+            'platform_analytics': platform_analytics,
+            'generation_metadata': generation_metadata
+        }
     
     async def _mine_reddit_prompts(self, industry: str, company_intel: Dict) -> List[Dict]:
         """Mine Reddit for real questions people ask"""
