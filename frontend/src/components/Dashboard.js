@@ -354,36 +354,83 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Alerts */}
+        {/* Recent Alerts / Opportunities */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">RECENT ALERTS</h3>
-            <button className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+            <h3 className="text-lg font-semibold text-slate-900">TOP OPPORTUNITIES</h3>
+            <button 
+              onClick={() => navigate('/prompts')}
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
               View All <ChevronRight size={16} />
             </button>
           </div>
           <div className="divide-y divide-slate-100">
-            <div className="px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-slate-700">Brand mentioned in ChatGPT for "best PM tool"</span>
+            {prompts.length > 0 ? (
+              <>
+                {/* Show top 3 high-value prompts as opportunities */}
+                {prompts
+                  .filter(p => p.business_value >= 60 || p.overall_score >= 70)
+                  .slice(0, 3)
+                  .map((prompt, index) => (
+                    <div key={prompt.id || index} className="px-6 py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          prompt.tier === 'TIER_1_CRITICAL' ? 'bg-green-500' :
+                          prompt.tier === 'TIER_2_HIGH' ? 'bg-blue-500' :
+                          'bg-yellow-500'
+                        }`}></div>
+                        <div>
+                          <span className="text-sm text-slate-700 line-clamp-1">
+                            {prompt.intent === 'commercial_investigation' && '🎯 '}
+                            {prompt.intent === 'transactional' && '💰 '}
+                            {prompt.prompt.length > 60 ? prompt.prompt.slice(0, 60) + '...' : prompt.prompt}
+                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${getCategoryColor(prompt.intent)}`}>
+                              {prompt.intent?.replace('_', ' ')}
+                            </span>
+                            <span className="text-xs text-slate-400">Score: {Math.round(prompt.overall_score)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-1 rounded ${
+                        prompt.tier === 'TIER_1_CRITICAL' ? 'bg-green-100 text-green-700' :
+                        prompt.tier === 'TIER_2_HIGH' ? 'bg-blue-100 text-blue-700' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        {prompt.tier?.replace('TIER_', '').replace('_', ' ')}
+                      </span>
+                    </div>
+                  ))}
+                
+                {/* Show competitor comparison prompts */}
+                {prompts
+                  .filter(p => p.source === 'competitor_comparison')
+                  .slice(0, 2)
+                  .map((prompt, index) => (
+                    <div key={`comp-${index}`} className="px-6 py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <div>
+                          <span className="text-sm text-slate-700 line-clamp-1">
+                            ⚔️ {prompt.prompt.length > 50 ? prompt.prompt.slice(0, 50) + '...' : prompt.prompt}
+                          </span>
+                          <span className="text-xs text-slate-400 block mt-1">Competitor comparison opportunity</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium px-2 py-1 rounded bg-red-100 text-red-700">
+                        VS COMPETITOR
+                      </span>
+                    </div>
+                  ))}
+              </>
+            ) : (
+              <div className="px-6 py-8 text-center text-slate-500">
+                <p>No prompt opportunities yet.</p>
+                <p className="text-sm mt-1">Complete onboarding to generate prompts.</p>
               </div>
-              <span className="text-xs text-slate-500">2 hours ago</span>
-            </div>
-            <div className="px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-slate-700">Competitor gained mention for "PM comparison"</span>
-              </div>
-              <span className="text-xs text-slate-500">5 hours ago</span>
-            </div>
-            <div className="px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-slate-700">Position improved: "project management tips"</span>
-              </div>
-              <span className="text-xs text-slate-500">1 day ago</span>
-            </div>
+            )}
           </div>
         </div>
       </div>
