@@ -276,18 +276,36 @@ async def onboard_user(user_id: str, website_url: str, industry: str, product_de
         
         logger.info(f"Generating prompts for: {website_data['name']}")
         
-        prompts = await prompt_generator_service.generate_prompts(
+        # Call the 8-Layer prompt generator (includes Layer 8: AI Platform Discovery)
+        generation_result = await prompt_generator_service.generate_prompts(
             website_data=website_data,
             industry=industry,
-            competitors=competitors
+            competitors=competitors,
+            include_layer8=True  # Enable AI platform discovery
         )
         
+        # Extract results
+        prompts = generation_result.get('prompts', [])
+        platform_analytics = generation_result.get('platform_analytics', {})
+        generation_metadata = generation_result.get('generation_metadata', {})
+        
         logger.info(f"Generated {len(prompts)} prompts")
+        logger.info(f"Layer 8 prompts in top 100: {generation_metadata.get('layer8_prompts_in_top100', 0)}")
         
         # Step 3: Save prompts to database
         week_number = datetime.now(timezone.utc).isocalendar()[1]
         
         for prompt_data in prompts:
+            # Build extra_fields for Layer 8 data
+            extra_fields = {}
+            if prompt_data.get('source') == 'ai_platform_discovery':
+                extra_fields = {
+                    'ai_discovery_platform': prompt_data.get('ai_discovery_platform'),
+                    'ai_platform_display': prompt_data.get('ai_platform_display'),
+                    'focus': prompt_data.get('focus'),
+                    'volume_estimate': prompt_data.get('volume_estimate')
+                }
+            
             prompt = Prompt(
                 user_id=user_id,
                 prompt=prompt_data.get('prompt', ''),
@@ -304,9 +322,23 @@ async def onboard_user(user_id: str, website_url: str, industry: str, product_de
                 rank=prompt_data.get('rank', 0),
                 tier=prompt_data.get('tier', 'TIER_3_MEDIUM'),
                 buyer_stage=prompt_data.get('buyerStage', 'awareness'),
-                week_number=week_number
+                week_number=week_number,
+                extra_fields=extra_fields  # Store Layer 8 metadata
             )
             await db.prompts.insert_one(prompt.model_dump())
+        
+        # Step 4: Save platform analytics for future analytics features
+        if platform_analytics:
+            analytics_doc = {
+                'id': str(uuid.uuid4()),
+                'user_id': user_id,
+                'platform_analytics': platform_analytics,
+                'generation_metadata': generation_metadata,
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'week_number': week_number
+            }
+            await db.platform_analytics.insert_one(analytics_doc)
+            logger.info(f"Saved platform analytics for {len(platform_analytics)} AI platforms")
         
         # Mark onboarding complete
         await db.users.update_one(
