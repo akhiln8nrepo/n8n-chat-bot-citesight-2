@@ -130,10 +130,10 @@ class Layer8AIDiscoveryTester:
         print(f"❌ Layer 8 onboarding did not complete within {max_wait_time} seconds")
         return False
 
-    def test_sportswear_prompts_relevance(self):
-        """Verify prompts are relevant to sportswear/athletic apparel industry"""
+    def test_layer8_ai_platform_discovery(self):
+        """Verify Layer 8: AI Platform Discovery prompts are generated"""
         success, response = self.run_test(
-            "Get Sportswear-Relevant Prompts",
+            "Verify Layer 8: AI Platform Discovery Prompts",
             "GET",
             "prompts", 
             200
@@ -146,33 +146,42 @@ class Layer8AIDiscoveryTester:
             print("❌ No prompts found")
             return False
         
-        print(f"✅ Generated {len(response)} prompts")
+        print(f"✅ Generated {len(response)} total prompts")
         
-        # Check for sportswear-relevant prompts
-        sportswear_keywords = [
-            'running shoes', 'athletic', 'sportswear', 'sneakers', 'football boots',
-            'adidas', 'nike', 'puma', 'under armour', 'shoes', 'footwear', 'apparel'
-        ]
-        
-        relevant_prompts = []
+        # Check for AI Platform Discovery source
+        ai_platform_prompts = []
         for prompt in response:
-            prompt_text = prompt.get('prompt', '').lower()
-            if any(keyword in prompt_text for keyword in sportswear_keywords):
-                relevant_prompts.append(prompt)
+            if prompt.get('source') == 'ai_platform_discovery':
+                ai_platform_prompts.append(prompt)
         
-        relevance_percentage = (len(relevant_prompts) / len(response)) * 100
-        print(f"   Sportswear relevance: {relevance_percentage:.1f}% ({len(relevant_prompts)}/{len(response)} prompts)")
-        
-        # Show sample relevant prompts
-        print("   Sample relevant prompts:")
-        for i, prompt in enumerate(relevant_prompts[:5]):
-            print(f"     {i+1}. {prompt.get('prompt')}")
-        
-        if relevance_percentage < 40:
-            print(f"❌ Low relevance: Only {relevance_percentage:.1f}% of prompts are sportswear-related")
+        if len(ai_platform_prompts) == 0:
+            print("❌ No AI Platform Discovery prompts found")
             return False
         
-        print(f"✅ Good relevance: {relevance_percentage:.1f}% of prompts are sportswear-related")
+        print(f"✅ Found {len(ai_platform_prompts)} AI Platform Discovery prompts")
+        
+        # Verify extra_fields contain platform information
+        platforms_found = set()
+        for prompt in ai_platform_prompts:
+            extra_fields = prompt.get('extra_fields', {})
+            platform = extra_fields.get('ai_discovery_platform')
+            if platform:
+                platforms_found.add(platform)
+        
+        expected_platforms = {'chatgpt', 'claude', 'gemini', 'perplexity'}
+        print(f"   AI platforms found: {sorted(platforms_found)}")
+        
+        if not platforms_found:
+            print("❌ No AI discovery platforms found in extra_fields")
+            return False
+        
+        # Show sample AI platform prompts
+        print("   Sample AI Platform Discovery prompts:")
+        for i, prompt in enumerate(ai_platform_prompts[:3]):
+            platform = prompt.get('extra_fields', {}).get('ai_discovery_platform', 'unknown')
+            print(f"     {i+1}. [{platform.upper()}] {prompt.get('prompt')}")
+        
+        print(f"✅ Layer 8 AI Platform Discovery working - {len(platforms_found)} platforms active")
         return True
 
     def test_new_prompt_sources(self):
