@@ -613,10 +613,17 @@ async def get_monitored_prompts(authorization: str = Header(None)):
 # ============================================
 
 @api_router.get("/analytics/dashboard")
-async def get_analytics_dashboard(authorization: str = Header(None), period: str = "30d"):
+async def get_analytics_dashboard(
+    authorization: str = Header(None), 
+    period: str = "30d",
+    platform: Optional[str] = None,
+    category: Optional[str] = None
+):
     """
     Get comprehensive analytics dashboard data.
     Period options: 7d, 30d, 90d
+    Platform options: chatgpt, claude, gemini, perplexity, all
+    Category options: any prompt source category
     """
     user = await get_current_user(authorization)
     
@@ -626,8 +633,12 @@ async def get_analytics_dashboard(authorization: str = Header(None), period: str
     start_date = end_date - timedelta(days=days)
     
     # Get all user prompts
+    prompt_query = {"user_id": user['id']}
+    if category and category != 'all':
+        prompt_query["source"] = category
+    
     all_prompts = await db.prompts.find(
-        {"user_id": user['id']},
+        prompt_query,
         {"_id": 0}
     ).to_list(100)
     
@@ -640,30 +651,37 @@ async def get_analytics_dashboard(authorization: str = Header(None), period: str
     monitored_prompt_ids = {c['prompt_id'] for c in monitored_configs}
     monitored_prompts = [p for p in all_prompts if p['id'] in monitored_prompt_ids]
     
+    # Build monitoring results query
+    results_query = {
+        "user_id": user['id'],
+        "checked_at": {"$gte": start_date.isoformat()}
+    }
+    if platform and platform != 'all':
+        results_query["platform"] = platform
+    
     # Get monitoring results
     monitoring_results = await db.monitoring_results.find(
-        {
-            "user_id": user['id'],
-            "checked_at": {"$gte": start_date.isoformat()}
-        },
+        results_query,
         {"_id": 0}
     ).to_list(1000)
     
+    # Build mentions query
+    mentions_query = {
+        "user_id": user['id'],
+        "detected_at": {"$gte": start_date.isoformat()}
+    }
+    if platform and platform != 'all':
+        mentions_query["platform"] = platform
+    
     # Get brand mentions
     brand_mentions = await db.brand_mentions.find(
-        {
-            "user_id": user['id'],
-            "detected_at": {"$gte": start_date.isoformat()}
-        },
+        mentions_query,
         {"_id": 0}
     ).to_list(1000)
     
     # Get competitor mentions
     competitor_mentions = await db.competitor_mentions.find(
-        {
-            "user_id": user['id'],
-            "detected_at": {"$gte": start_date.isoformat()}
-        },
+        mentions_query,
         {"_id": 0}
     ).to_list(1000)
     
@@ -683,32 +701,68 @@ async def get_analytics_dashboard(authorization: str = Header(None), period: str
     sentiments = [m.get('sentiment_score', 0) for m in brand_mentions if m.get('sentiment_score') is not None]
     avg_sentiment = sum(sentiments) / max(len(sentiments), 1) if sentiments else 0
     
+    # Position distribution
+    position_distribution = {1: 0, 2: 0, 3: 0, 'other': 0}
+    for mention in brand_mentions:
+        pos = mention.get('position_in_response')
+        if pos == 1:
+            position_distribution[1] += 1
+        elif pos == 2:
+            position_distribution[2] += 1
+        elif pos == 3:
+            position_distribution[3] += 1
+        elif pos:
+            position_distribution['other'] += 1
+    
     # Share of voice
     total_market_mentions = total_mentions + len(competitor_mentions)
     share_of_voice = (total_mentions / max(total_market_mentions, 1)) * 100
     
-    # Platform breakdown
+    # Platform breakdown (always show all platforms for comparison)
     platform_stats = {}
-    for result in monitoring_results:
-        platform = result.get('platform', 'unknown')
-        if platform not in platform_stats:
-            platform_stats[platform] = {
-                'total_checks': 0,
-                'mentions': 0,
-                'total_position': 0,
-                'position_count': 0
-            }
-        platform_stats[platform]['total_checks'] += 1
+    platforms_list = ['chatgpt', 'claude', 'gemini', 'perplexity']
+    for p in platforms_list:
+        platform_stats[p] = {
+            'total_checks': 0,
+            'mentions': 0,
+            'total_position': 0,
+            'position_count': 0,
+            'positive_sentiment': 0,
+            'negative_sentiment': 0,
+            'first_positions': 0
+        }
     
-    for mention in brand_mentions:
-        platform = mention.get('platform', 'unknown')
-        if platform in platform_stats:
-            platform_stats[platform]['mentions'] += 1
+    # Get all results for platform breakdown (ignore platform filter for this)
+    all_results = await db.monitoring_results.find(
+        {"user_id": user['id'], "checked_at": {"$gte": start_date.isoformat()}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    all_brand_mentions = await db.brand_mentions.find(
+        {"user_id": user['id'], "detected_at": {"$gte": start_date.isoformat()}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    for result in all_results:
+        p = result.get('platform', 'unknown')
+        if p in platform_stats:
+            platform_stats[p]['total_checks'] += 1
+    
+    for mention in all_brand_mentions:
+        p = mention.get('platform', 'unknown')
+        if p in platform_stats:
+            platform_stats[p]['mentions'] += 1
             if mention.get('position_in_response'):
-                platform_stats[platform]['total_position'] += mention['position_in_response']
-                platform_stats[platform]['position_count'] += 1
+                platform_stats[p]['total_position'] += mention['position_in_response']
+                platform_stats[p]['position_count'] += 1
+                if mention['position_in_response'] == 1:
+                    platform_stats[p]['first_positions'] += 1
+            sentiment = mention.get('sentiment')
+            if sentiment == 'positive':
+                platform_stats[p]['positive_sentiment'] += 1
+            elif sentiment == 'negative':
+                platform_stats[p]['negative_sentiment'] += 1
     
-    platform_breakdown = []
     platform_display_names = {
         'chatgpt': 'ChatGPT (OpenAI)',
         'claude': 'Claude (Anthropic)',
@@ -716,36 +770,63 @@ async def get_analytics_dashboard(authorization: str = Header(None), period: str
         'perplexity': 'Perplexity AI'
     }
     
-    for platform, stats in platform_stats.items():
+    platform_breakdown = []
+    for p, stats in platform_stats.items():
         mention_rate = (stats['mentions'] / max(stats['total_checks'], 1)) * 100
         avg_pos = stats['total_position'] / max(stats['position_count'], 1) if stats['position_count'] > 0 else None
         platform_breakdown.append({
-            'platform': platform,
-            'display_name': platform_display_names.get(platform, platform),
+            'platform': p,
+            'display_name': platform_display_names.get(p, p),
             'total_checks': stats['total_checks'],
             'mentions': stats['mentions'],
             'mention_rate': round(mention_rate, 1),
-            'avg_position': round(avg_pos, 2) if avg_pos else None
+            'avg_position': round(avg_pos, 2) if avg_pos else None,
+            'first_positions': stats['first_positions'],
+            'positive_sentiment': stats['positive_sentiment'],
+            'negative_sentiment': stats['negative_sentiment'],
+            'is_selected': platform == p if platform else True
         })
     
     # Competitor analysis
+    all_competitor_mentions = await db.competitor_mentions.find(
+        {"user_id": user['id'], "detected_at": {"$gte": start_date.isoformat()}},
+        {"_id": 0}
+    ).to_list(1000)
+    
     competitor_stats = {}
-    for mention in competitor_mentions:
+    for mention in all_competitor_mentions:
         competitor = mention.get('competitor_name', 'Unknown')
+        p = mention.get('platform', 'unknown')
+        
         if competitor not in competitor_stats:
             competitor_stats[competitor] = {
                 'mentions': 0,
                 'above_brand': 0,
                 'comparisons': 0,
-                'comparison_wins': 0
+                'comparison_wins': 0,
+                'comparison_losses': 0,
+                'platforms': {},
+                'avg_position_total': 0,
+                'position_count': 0
             }
         competitor_stats[competitor]['mentions'] += 1
+        
+        # Track by platform
+        if p not in competitor_stats[competitor]['platforms']:
+            competitor_stats[competitor]['platforms'][p] = 0
+        competitor_stats[competitor]['platforms'][p] += 1
+        
         if mention.get('positioned_above_brand'):
             competitor_stats[competitor]['above_brand'] += 1
         if mention.get('is_direct_comparison'):
             competitor_stats[competitor]['comparisons'] += 1
             if mention.get('comparison_winner') == 'competitor':
                 competitor_stats[competitor]['comparison_wins'] += 1
+            elif mention.get('comparison_winner') == 'brand':
+                competitor_stats[competitor]['comparison_losses'] += 1
+        if mention.get('position_in_response'):
+            competitor_stats[competitor]['avg_position_total'] += mention['position_in_response']
+            competitor_stats[competitor]['position_count'] += 1
     
     competitors = [
         {
@@ -753,20 +834,42 @@ async def get_analytics_dashboard(authorization: str = Header(None), period: str
             'mentions': stats['mentions'],
             'above_brand_count': stats['above_brand'],
             'direct_comparisons': stats['comparisons'],
-            'share_of_voice': round((stats['mentions'] / max(total_market_mentions, 1)) * 100, 1)
+            'comparison_wins': stats['comparison_wins'],
+            'comparison_losses': stats['comparison_losses'],
+            'win_rate': round((stats['comparison_losses'] / max(stats['comparisons'], 1)) * 100, 1),  # Brand win rate
+            'avg_position': round(stats['avg_position_total'] / max(stats['position_count'], 1), 2) if stats['position_count'] > 0 else None,
+            'share_of_voice': round((stats['mentions'] / max(total_market_mentions, 1)) * 100, 1),
+            'platform_breakdown': stats['platforms']
         }
         for name, stats in sorted(competitor_stats.items(), key=lambda x: x[1]['mentions'], reverse=True)
     ]
     
     # Source/citation breakdown
-    source_stats = await db.source_citations.aggregate([
-        {"$match": {"user_id": user['id']}},
-        {"$group": {
-            "_id": "$source_type",
-            "count": {"$sum": 1},
-            "brand_mentions": {"$sum": {"$cond": ["$mentions_brand", 1, 0]}}
-        }}
-    ]).to_list(20)
+    source_citations = await db.source_citations.find(
+        {"user_id": user['id']},
+        {"_id": 0}
+    ).to_list(500)
+    
+    source_stats = {}
+    for citation in source_citations:
+        source_type = citation.get('source_type', 'unknown')
+        if source_type not in source_stats:
+            source_stats[source_type] = {'count': 0, 'brand_mentions': 0, 'domains': set()}
+        source_stats[source_type]['count'] += 1
+        if citation.get('mentions_brand'):
+            source_stats[source_type]['brand_mentions'] += 1
+        if citation.get('domain'):
+            source_stats[source_type]['domains'].add(citation['domain'])
+    
+    source_breakdown = [
+        {
+            'source_type': st, 
+            'count': data['count'], 
+            'brand_mentions': data['brand_mentions'],
+            'unique_domains': len(data['domains'])
+        }
+        for st, data in sorted(source_stats.items(), key=lambda x: x[1]['count'], reverse=True)
+    ]
     
     # Prompt performance
     prompt_performance = []
@@ -776,55 +879,107 @@ async def get_analytics_dashboard(authorization: str = Header(None), period: str
         
         mention_rate = (len(prompt_mentions) / max(len(prompt_checks), 1)) * 100
         positions = [m.get('position_in_response') for m in prompt_mentions if m.get('position_in_response')]
+        sentiments = [m.get('sentiment_score', 0) for m in prompt_mentions if m.get('sentiment_score') is not None]
+        
+        # Platform breakdown for this prompt
+        prompt_platform_breakdown = {}
+        for m in prompt_mentions:
+            p = m.get('platform', 'unknown')
+            if p not in prompt_platform_breakdown:
+                prompt_platform_breakdown[p] = 0
+            prompt_platform_breakdown[p] += 1
         
         prompt_performance.append({
             'prompt_id': prompt['id'],
-            'prompt_text': prompt.get('prompt', '')[:80],
+            'prompt_text': prompt.get('prompt', '')[:100],
+            'full_prompt': prompt.get('prompt', ''),
             'category': prompt.get('source', 'unknown'),
+            'intent': prompt.get('intent', 'unknown'),
             'overall_score': prompt.get('overall_score', 0),
             'check_count': len(prompt_checks),
             'mention_count': len(prompt_mentions),
             'mention_rate': round(mention_rate, 1),
             'avg_position': round(sum(positions) / max(len(positions), 1), 2) if positions else None,
-            'tier': prompt.get('tier', 'TIER_3_MEDIUM')
+            'avg_sentiment': round(sum(sentiments) / max(len(sentiments), 1), 3) if sentiments else None,
+            'tier': prompt.get('tier', 'TIER_3_MEDIUM'),
+            'platform_breakdown': prompt_platform_breakdown
         })
+    
+    # Sort by mention rate, then by score
+    prompt_performance.sort(key=lambda x: (x['mention_rate'], x['overall_score']), reverse=True)
     
     # Trend data (daily)
     trend_data = []
     for i in range(min(days, 30)):
         date = (end_date - timedelta(days=i)).strftime("%Y-%m-%d")
-        day_mentions = len([m for m in brand_mentions if m.get('detected_at', '').startswith(date)])
-        day_competitor_mentions = len([m for m in competitor_mentions if m.get('detected_at', '').startswith(date)])
+        day_mentions = [m for m in all_brand_mentions if m.get('detected_at', '').startswith(date)]
+        day_competitor_mentions = [m for m in all_competitor_mentions if m.get('detected_at', '').startswith(date)]
+        
+        # Platform breakdown for this day
+        day_platform_breakdown = {}
+        for p in platforms_list:
+            day_platform_breakdown[p] = len([m for m in day_mentions if m.get('platform') == p])
+        
+        positions = [m.get('position_in_response') for m in day_mentions if m.get('position_in_response')]
+        
         trend_data.append({
             'date': date,
-            'brand_mentions': day_mentions,
-            'competitor_mentions': day_competitor_mentions
+            'brand_mentions': len(day_mentions),
+            'competitor_mentions': len(day_competitor_mentions),
+            'avg_position': round(sum(positions) / max(len(positions), 1), 2) if positions else None,
+            'first_positions': len([m for m in day_mentions if m.get('position_in_response') == 1]),
+            'platform_breakdown': day_platform_breakdown
         })
     trend_data.reverse()
     
     # Top opportunities (prompts not getting mentions)
     opportunities = []
     for prompt in monitored_prompts:
-        prompt_mentions = [m for m in brand_mentions if m.get('prompt_id') == prompt['id']]
-        prompt_checks = [r for r in monitoring_results if r.get('prompt_id') == prompt['id']]
+        prompt_mentions = [m for m in all_brand_mentions if m.get('prompt_id') == prompt['id']]
+        prompt_checks = [r for r in all_results if r.get('prompt_id') == prompt['id']]
+        prompt_competitor_mentions = [cm for cm in all_competitor_mentions if cm.get('prompt_id') == prompt['id']]
         
         if len(prompt_checks) > 0:
             mention_rate = len(prompt_mentions) / len(prompt_checks)
             if mention_rate < 0.3:  # Less than 30% visibility
+                competitors_present = list(set(cm.get('competitor_name', 'Unknown') for cm in prompt_competitor_mentions))
+                
                 opportunities.append({
                     'prompt_id': prompt['id'],
-                    'prompt_text': prompt.get('prompt', '')[:80],
+                    'prompt_text': prompt.get('prompt', '')[:100],
                     'current_mention_rate': round(mention_rate * 100, 1),
                     'estimated_volume': prompt.get('volume', 50),
+                    'business_value': prompt.get('business_value', 50),
                     'priority_score': prompt.get('overall_score', 50),
                     'opportunity_type': 'low_visibility' if mention_rate > 0 else 'no_visibility',
-                    'competitors_present': len([cm for cm in competitor_mentions if cm.get('prompt_id') == prompt['id']])
+                    'competitors_present': competitors_present[:5],
+                    'competitor_count': len(competitors_present),
+                    'recommended_action': 'Create comparison content' if competitors_present else 'Optimize for AI visibility'
                 })
     
-    opportunities.sort(key=lambda x: x['priority_score'], reverse=True)
+    opportunities.sort(key=lambda x: (x['competitor_count'], x['priority_score']), reverse=True)
+    
+    # Mention types breakdown
+    mention_types = {}
+    for mention in all_brand_mentions:
+        mt = mention.get('mention_type', 'unknown')
+        if mt not in mention_types:
+            mention_types[mt] = 0
+        mention_types[mt] += 1
+    
+    # Sentiment breakdown
+    sentiment_breakdown = {'positive': 0, 'neutral': 0, 'negative': 0}
+    for mention in all_brand_mentions:
+        sentiment = mention.get('sentiment', 'neutral')
+        if sentiment in sentiment_breakdown:
+            sentiment_breakdown[sentiment] += 1
     
     return {
         "period": period,
+        "filters": {
+            "platform": platform or "all",
+            "category": category or "all"
+        },
         "date_range": {
             "start": start_date.isoformat(),
             "end": end_date.isoformat()
@@ -837,24 +992,27 @@ async def get_analytics_dashboard(authorization: str = Header(None), period: str
             "total_monitored_prompts": len(monitored_prompts),
             "total_checks": total_checks,
             "total_mentions": total_mentions,
-            "first_position_count": len([m for m in brand_mentions if m.get('position_in_response') == 1])
+            "first_position_count": position_distribution[1],
+            "top_3_count": position_distribution[1] + position_distribution[2] + position_distribution[3]
         },
+        "position_distribution": position_distribution,
+        "sentiment_breakdown": sentiment_breakdown,
+        "mention_types": mention_types,
         "platform_breakdown": platform_breakdown,
-        "competitors": competitors,
+        "competitors": competitors[:10],
         "share_of_voice_breakdown": [
             {"entity": "Your Brand", "share": round(share_of_voice, 1), "mentions": total_mentions, "is_brand": True}
         ] + [
             {"entity": c['name'], "share": c['share_of_voice'], "mentions": c['mentions'], "is_brand": False}
             for c in competitors[:5]
         ],
-        "source_breakdown": [
-            {"source_type": s['_id'] or 'unknown', "count": s['count'], "brand_mentions": s['brand_mentions']}
-            for s in source_stats
-        ],
-        "prompt_performance": prompt_performance[:10],
+        "source_breakdown": source_breakdown,
+        "prompt_performance": prompt_performance[:15],
         "trend_data": trend_data,
         "opportunities": opportunities[:10],
-        "total_prompts": len(all_prompts)
+        "total_prompts": len(all_prompts),
+        "available_platforms": platforms_list,
+        "available_categories": list(set(p.get('source', 'unknown') for p in all_prompts))
     }
 
 @api_router.post("/analytics/run-check")
