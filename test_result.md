@@ -337,3 +337,32 @@ agent_communication:
     message: "IMPLEMENTED LAYER 8: AI PLATFORM DISCOVERY - Complete implementation of the 8th layer of the GEO Prompt Generation Framework. Changes: 1) Added new AIplatformDiscovery class in prompt_generator_service.py that queries 4 AI platforms via OpenRouter (ChatGPT/gpt-4o-mini, Claude/claude-3-haiku, Gemini/gemini-flash-1.5, Perplexity/llama-3.1-sonar-small-128k-online) 2) Each platform generates 15-20 real-world prompts that users actually ask 3) Platform responses are processed and deduplicated before merging with Layers 1-7 prompts 4) Added platform_analytics storage with visibility scores, competitor mentions, and intent distribution per AI platform 5) Updated server.py with new endpoints: GET /api/prompts/platform-analytics and GET /api/prompts/by-platform/{platform} 6) Added extra_fields to Prompt model to store Layer 8 metadata (ai_discovery_platform, ai_platform_display) 7) Updated frontend PromptMonitoring.js with new 'AI Platform Discovery' source filter and pink color coding 8) Updated onboarding UI to show AI platform querying step. Ready for comprehensive testing of new user registration flow with Layer 8 enabled."
   - agent: "testing"
     message: "LAYER 8: AI PLATFORM DISCOVERY COMPREHENSIVE TESTING COMPLETE! ✅ FULL SYSTEM VERIFICATION: Successfully tested Layer 8 implementation with user layer8test_1766513357@geomonitor.com (Tech Solutions Inc, Financial Services). Results: 1) REGISTRATION & ONBOARDING: User registration successful with Layer 8 test data (Stripe.com, Financial Services, competitors: PayPal/Square/Adyen), onboarding completed in ~50 seconds, generated 100 prompts (up from previous 25) 2) LAYER 8 AI PLATFORM DISCOVERY: Successfully detected 16 AI Platform Discovery prompts from ChatGPT platform (Claude/Gemini/Perplexity had API model issues but system handled gracefully) 3) NEW API ENDPOINTS WORKING: GET /api/prompts/platform-analytics returns comprehensive analytics for all 4 platforms with visibility scores, brand mentions, intent distribution. GET /api/prompts/by-platform/{platform} endpoints working for all platforms (ChatGPT: 16 prompts, others: 0 due to API issues) 4) EXTRA_FIELDS VERIFICATION: AI Platform Discovery prompts contain proper extra_fields with ai_discovery_platform='chatgpt' and ai_platform_display metadata 5) FINANCIAL SERVICES RELEVANCE: 100% relevance to fintech/payments industry with prompts about Stripe, PayPal, Square, payment processing, financial management 6) SOURCE DIVERSITY: Found 6 total sources including ai_platform_discovery (16 prompts), competitor_comparison (36), product_discovery (26), category_search (10), persona_based (4), use_case (8) 7) PLATFORM ANALYTICS: Comprehensive analytics available with ChatGPT visibility_score=85.3, brand mentions, competitor analysis, intent distribution 8) FRONTEND INTEGRATION: AI Platform Discovery source filter available in PromptMonitoring.js with pink color coding. Layer 8: AI Platform Discovery is fully functional and successfully upgrading the GEO Prompt Monitor from 7-Layer to 8-Layer framework!"
+
+## Current Testing Focus - Layer 8 & Analytics Dashboard
+
+### Changes Made:
+1. **Fixed 100 Prompts Issue**: Changed `/api/prompts` endpoint limit from 25 to 100
+2. **Added Layer 8**: AI Platform Discovery implementation via OpenRouter (ChatGPT, Claude, Gemini, Perplexity)
+3. **New Analytics Dashboard**: Comprehensive GEO analytics with:
+   - KPI cards (visibility rate, avg position, share of voice, sentiment)
+   - Platform filter (filter by ChatGPT, Claude, Gemini, Perplexity)
+   - Category filter (filter by prompt source category)
+   - Platform performance comparison
+   - Share of voice breakdown
+   - Competitor intelligence tracking
+   - Position distribution
+   - Trend visualization
+   - Opportunities identification
+4. **New API Endpoints**:
+   - `GET /api/analytics/dashboard` with platform and category filters
+   - `POST /api/prompts/{prompt_id}/monitor` - Start monitoring
+   - `DELETE /api/prompts/{prompt_id}/monitor` - Stop monitoring
+   - `GET /api/monitoring/prompts` - Get monitored prompts
+5. **Navigation**: Added Analytics link to Dashboard and Prompts pages
+
+### Test Scenarios:
+1. Login and verify prompts page shows up to 100 prompts
+2. Navigate to Analytics page and verify filters work
+3. Test platform filter (ChatGPT, Claude, Gemini, Perplexity)
+4. Verify KPI cards display correctly
+5. Test competitor intelligence section
