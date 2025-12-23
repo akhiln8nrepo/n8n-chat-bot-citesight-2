@@ -89,7 +89,7 @@ class Prompt(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     prompt: str
-    source: str  # category_search, product_discovery, competitor_comparison, use_case, persona_based, problem_solution, feature_discovery, reddit_mining
+    source: str  # category_search, product_discovery, competitor_comparison, use_case, persona_based, problem_solution, feature_discovery, reddit_mining, ai_platform_discovery
     intent: str  # informational, navigational, commercial_investigation, transactional, local, support
     business_value: int  # 0-100 scale (25% weight)
     volume: int  # 0-100 scale (15% weight)
@@ -104,6 +104,8 @@ class Prompt(BaseModel):
     buyer_stage: str = ""  # awareness, consideration, decision, retention
     generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     week_number: int  # Week of year
+    # Layer 8: AI Platform Discovery metadata
+    extra_fields: Dict = Field(default_factory=dict)  # Stores ai_discovery_platform, ai_platform_display, etc.
 
 class CrawlResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
