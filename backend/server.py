@@ -519,6 +519,381 @@ async def get_prompts_by_platform(platform: str, authorization: str = Header(Non
     }
 
 # ============================================
+# MONITORING ROUTES
+# ============================================
+
+@api_router.post("/prompts/{prompt_id}/monitor")
+async def start_monitoring_prompt(prompt_id: str, authorization: str = Header(None)):
+    """Start monitoring a prompt"""
+    user = await get_current_user(authorization)
+    
+    # Verify prompt belongs to user
+    prompt = await db.prompts.find_one({"id": prompt_id, "user_id": user['id']}, {"_id": 0})
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    
+    # Add to monitoring
+    monitoring_config = {
+        "id": str(uuid.uuid4()),
+        "user_id": user['id'],
+        "prompt_id": prompt_id,
+        "is_active": True,
+        "monitoring_frequency": "daily",
+        "platforms": ["chatgpt", "claude", "gemini", "perplexity"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "last_checked_at": None,
+        "total_checks": 0
+    }
+    
+    # Check if already monitoring
+    existing = await db.monitoring_configs.find_one({
+        "user_id": user['id'],
+        "prompt_id": prompt_id
+    })
+    
+    if existing:
+        await db.monitoring_configs.update_one(
+            {"id": existing['id']},
+            {"$set": {"is_active": True}}
+        )
+        return {"message": "Monitoring reactivated", "monitoring_id": existing['id']}
+    
+    await db.monitoring_configs.insert_one(monitoring_config)
+    return {"message": "Monitoring started", "monitoring_id": monitoring_config['id']}
+
+@api_router.delete("/prompts/{prompt_id}/monitor")
+async def stop_monitoring_prompt(prompt_id: str, authorization: str = Header(None)):
+    """Stop monitoring a prompt"""
+    user = await get_current_user(authorization)
+    
+    result = await db.monitoring_configs.update_one(
+        {"user_id": user['id'], "prompt_id": prompt_id},
+        {"$set": {"is_active": False}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Monitoring config not found")
+    
+    return {"message": "Monitoring stopped"}
+
+@api_router.get("/monitoring/prompts")
+async def get_monitored_prompts(authorization: str = Header(None)):
+    """Get all monitored prompts for current user"""
+    user = await get_current_user(authorization)
+    
+    # Get monitoring configs
+    configs = await db.monitoring_configs.find(
+        {"user_id": user['id'], "is_active": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get prompt details for each config
+    prompt_ids = [c['prompt_id'] for c in configs]
+    prompts = await db.prompts.find(
+        {"id": {"$in": prompt_ids}},
+        {"_id": 0}
+    ).to_list(100)
+    
+    prompt_map = {p['id']: p for p in prompts}
+    
+    # Combine data
+    monitored_prompts = []
+    for config in configs:
+        prompt = prompt_map.get(config['prompt_id'])
+        if prompt:
+            monitored_prompts.append({
+                **prompt,
+                "monitoring_config": config
+            })
+    
+    return monitored_prompts
+
+# ============================================
+# ANALYTICS ROUTES - COMPREHENSIVE DASHBOARD
+# ============================================
+
+@api_router.get("/analytics/dashboard")
+async def get_analytics_dashboard(authorization: str = Header(None), period: str = "30d"):
+    """
+    Get comprehensive analytics dashboard data.
+    Period options: 7d, 30d, 90d
+    """
+    user = await get_current_user(authorization)
+    
+    # Calculate date range
+    days = {"7d": 7, "30d": 30, "90d": 90}.get(period, 30)
+    end_date = datetime.now(timezone.utc)
+    start_date = end_date - timedelta(days=days)
+    
+    # Get all user prompts
+    all_prompts = await db.prompts.find(
+        {"user_id": user['id']},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get monitored prompts
+    monitored_configs = await db.monitoring_configs.find(
+        {"user_id": user['id'], "is_active": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    monitored_prompt_ids = {c['prompt_id'] for c in monitored_configs}
+    monitored_prompts = [p for p in all_prompts if p['id'] in monitored_prompt_ids]
+    
+    # Get monitoring results
+    monitoring_results = await db.monitoring_results.find(
+        {
+            "user_id": user['id'],
+            "checked_at": {"$gte": start_date.isoformat()}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get brand mentions
+    brand_mentions = await db.brand_mentions.find(
+        {
+            "user_id": user['id'],
+            "detected_at": {"$gte": start_date.isoformat()}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get competitor mentions
+    competitor_mentions = await db.competitor_mentions.find(
+        {
+            "user_id": user['id'],
+            "detected_at": {"$gte": start_date.isoformat()}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Calculate KPIs
+    total_checks = len(monitoring_results)
+    total_mentions = len(brand_mentions)
+    
+    # Visibility rate
+    unique_checks_with_mentions = len(set(m.get('monitoring_result_id') for m in brand_mentions if m.get('monitoring_result_id')))
+    visibility_rate = (unique_checks_with_mentions / max(total_checks, 1)) * 100
+    
+    # Average position
+    positions = [m.get('position_in_response') for m in brand_mentions if m.get('position_in_response')]
+    avg_position = sum(positions) / max(len(positions), 1) if positions else None
+    
+    # Sentiment analysis
+    sentiments = [m.get('sentiment_score', 0) for m in brand_mentions if m.get('sentiment_score') is not None]
+    avg_sentiment = sum(sentiments) / max(len(sentiments), 1) if sentiments else 0
+    
+    # Share of voice
+    total_market_mentions = total_mentions + len(competitor_mentions)
+    share_of_voice = (total_mentions / max(total_market_mentions, 1)) * 100
+    
+    # Platform breakdown
+    platform_stats = {}
+    for result in monitoring_results:
+        platform = result.get('platform', 'unknown')
+        if platform not in platform_stats:
+            platform_stats[platform] = {
+                'total_checks': 0,
+                'mentions': 0,
+                'total_position': 0,
+                'position_count': 0
+            }
+        platform_stats[platform]['total_checks'] += 1
+    
+    for mention in brand_mentions:
+        platform = mention.get('platform', 'unknown')
+        if platform in platform_stats:
+            platform_stats[platform]['mentions'] += 1
+            if mention.get('position_in_response'):
+                platform_stats[platform]['total_position'] += mention['position_in_response']
+                platform_stats[platform]['position_count'] += 1
+    
+    platform_breakdown = []
+    platform_display_names = {
+        'chatgpt': 'ChatGPT (OpenAI)',
+        'claude': 'Claude (Anthropic)',
+        'gemini': 'Gemini (Google)',
+        'perplexity': 'Perplexity AI'
+    }
+    
+    for platform, stats in platform_stats.items():
+        mention_rate = (stats['mentions'] / max(stats['total_checks'], 1)) * 100
+        avg_pos = stats['total_position'] / max(stats['position_count'], 1) if stats['position_count'] > 0 else None
+        platform_breakdown.append({
+            'platform': platform,
+            'display_name': platform_display_names.get(platform, platform),
+            'total_checks': stats['total_checks'],
+            'mentions': stats['mentions'],
+            'mention_rate': round(mention_rate, 1),
+            'avg_position': round(avg_pos, 2) if avg_pos else None
+        })
+    
+    # Competitor analysis
+    competitor_stats = {}
+    for mention in competitor_mentions:
+        competitor = mention.get('competitor_name', 'Unknown')
+        if competitor not in competitor_stats:
+            competitor_stats[competitor] = {
+                'mentions': 0,
+                'above_brand': 0,
+                'comparisons': 0,
+                'comparison_wins': 0
+            }
+        competitor_stats[competitor]['mentions'] += 1
+        if mention.get('positioned_above_brand'):
+            competitor_stats[competitor]['above_brand'] += 1
+        if mention.get('is_direct_comparison'):
+            competitor_stats[competitor]['comparisons'] += 1
+            if mention.get('comparison_winner') == 'competitor':
+                competitor_stats[competitor]['comparison_wins'] += 1
+    
+    competitors = [
+        {
+            'name': name,
+            'mentions': stats['mentions'],
+            'above_brand_count': stats['above_brand'],
+            'direct_comparisons': stats['comparisons'],
+            'share_of_voice': round((stats['mentions'] / max(total_market_mentions, 1)) * 100, 1)
+        }
+        for name, stats in sorted(competitor_stats.items(), key=lambda x: x[1]['mentions'], reverse=True)
+    ]
+    
+    # Source/citation breakdown
+    source_stats = await db.source_citations.aggregate([
+        {"$match": {"user_id": user['id']}},
+        {"$group": {
+            "_id": "$source_type",
+            "count": {"$sum": 1},
+            "brand_mentions": {"$sum": {"$cond": ["$mentions_brand", 1, 0]}}
+        }}
+    ]).to_list(20)
+    
+    # Prompt performance
+    prompt_performance = []
+    for prompt in monitored_prompts[:20]:
+        prompt_mentions = [m for m in brand_mentions if m.get('prompt_id') == prompt['id']]
+        prompt_checks = [r for r in monitoring_results if r.get('prompt_id') == prompt['id']]
+        
+        mention_rate = (len(prompt_mentions) / max(len(prompt_checks), 1)) * 100
+        positions = [m.get('position_in_response') for m in prompt_mentions if m.get('position_in_response')]
+        
+        prompt_performance.append({
+            'prompt_id': prompt['id'],
+            'prompt_text': prompt.get('prompt', '')[:80],
+            'category': prompt.get('source', 'unknown'),
+            'overall_score': prompt.get('overall_score', 0),
+            'check_count': len(prompt_checks),
+            'mention_count': len(prompt_mentions),
+            'mention_rate': round(mention_rate, 1),
+            'avg_position': round(sum(positions) / max(len(positions), 1), 2) if positions else None,
+            'tier': prompt.get('tier', 'TIER_3_MEDIUM')
+        })
+    
+    # Trend data (daily)
+    trend_data = []
+    for i in range(min(days, 30)):
+        date = (end_date - timedelta(days=i)).strftime("%Y-%m-%d")
+        day_mentions = len([m for m in brand_mentions if m.get('detected_at', '').startswith(date)])
+        day_competitor_mentions = len([m for m in competitor_mentions if m.get('detected_at', '').startswith(date)])
+        trend_data.append({
+            'date': date,
+            'brand_mentions': day_mentions,
+            'competitor_mentions': day_competitor_mentions
+        })
+    trend_data.reverse()
+    
+    # Top opportunities (prompts not getting mentions)
+    opportunities = []
+    for prompt in monitored_prompts:
+        prompt_mentions = [m for m in brand_mentions if m.get('prompt_id') == prompt['id']]
+        prompt_checks = [r for r in monitoring_results if r.get('prompt_id') == prompt['id']]
+        
+        if len(prompt_checks) > 0:
+            mention_rate = len(prompt_mentions) / len(prompt_checks)
+            if mention_rate < 0.3:  # Less than 30% visibility
+                opportunities.append({
+                    'prompt_id': prompt['id'],
+                    'prompt_text': prompt.get('prompt', '')[:80],
+                    'current_mention_rate': round(mention_rate * 100, 1),
+                    'estimated_volume': prompt.get('volume', 50),
+                    'priority_score': prompt.get('overall_score', 50),
+                    'opportunity_type': 'low_visibility' if mention_rate > 0 else 'no_visibility',
+                    'competitors_present': len([cm for cm in competitor_mentions if cm.get('prompt_id') == prompt['id']])
+                })
+    
+    opportunities.sort(key=lambda x: x['priority_score'], reverse=True)
+    
+    return {
+        "period": period,
+        "date_range": {
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat()
+        },
+        "kpis": {
+            "visibility_rate": round(visibility_rate, 1),
+            "avg_position": round(avg_position, 2) if avg_position else None,
+            "share_of_voice": round(share_of_voice, 1),
+            "avg_sentiment": round(avg_sentiment, 3),
+            "total_monitored_prompts": len(monitored_prompts),
+            "total_checks": total_checks,
+            "total_mentions": total_mentions,
+            "first_position_count": len([m for m in brand_mentions if m.get('position_in_response') == 1])
+        },
+        "platform_breakdown": platform_breakdown,
+        "competitors": competitors,
+        "share_of_voice_breakdown": [
+            {"entity": "Your Brand", "share": round(share_of_voice, 1), "mentions": total_mentions, "is_brand": True}
+        ] + [
+            {"entity": c['name'], "share": c['share_of_voice'], "mentions": c['mentions'], "is_brand": False}
+            for c in competitors[:5]
+        ],
+        "source_breakdown": [
+            {"source_type": s['_id'] or 'unknown', "count": s['count'], "brand_mentions": s['brand_mentions']}
+            for s in source_stats
+        ],
+        "prompt_performance": prompt_performance[:10],
+        "trend_data": trend_data,
+        "opportunities": opportunities[:10],
+        "total_prompts": len(all_prompts)
+    }
+
+@api_router.post("/analytics/run-check")
+async def run_monitoring_check(prompt_ids: List[str], authorization: str = Header(None), background_tasks: BackgroundTasks = None):
+    """Run a monitoring check for specified prompts"""
+    user = await get_current_user(authorization)
+    
+    # This would trigger the actual AI platform queries
+    # For now, we'll create simulated results
+    
+    check_id = str(uuid.uuid4())
+    
+    for prompt_id in prompt_ids:
+        # Verify prompt belongs to user
+        prompt = await db.prompts.find_one({"id": prompt_id, "user_id": user['id']})
+        if not prompt:
+            continue
+        
+        # Create monitoring result placeholder
+        result = {
+            "id": str(uuid.uuid4()),
+            "user_id": user['id'],
+            "prompt_id": prompt_id,
+            "check_id": check_id,
+            "status": "pending",
+            "platforms_checked": ["chatgpt", "claude", "gemini", "perplexity"],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.monitoring_results.insert_one(result)
+    
+    # In production, background_tasks.add_task would run the actual AI queries
+    
+    return {
+        "check_id": check_id,
+        "prompts_queued": len(prompt_ids),
+        "message": "Monitoring check queued"
+    }
+
+# ============================================
 # USER ROUTES
 # ============================================
 
