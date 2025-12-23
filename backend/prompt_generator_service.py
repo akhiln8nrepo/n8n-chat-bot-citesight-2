@@ -986,8 +986,8 @@ class GEOPromptGeneratorService:
         # Sort by overall score
         scored_prompts.sort(key=lambda x: x.get('overall_score', 0), reverse=True)
         
-        # Take top 25 and format for database
-        top_prompts = scored_prompts[:25]
+        # Take top 100 prompts and format for database
+        top_prompts = scored_prompts[:100]
         
         # Add rank
         for i, prompt in enumerate(top_prompts, 1):
@@ -1003,7 +1003,7 @@ class GEOPromptGeneratorService:
             prompt['citation_potential'] = scores.get('citationPotential', 50)
             prompt['brand_relevance'] = scores.get('brandRelevance', 50)
         
-        logger.info(f"Generated {len(top_prompts)} prompts")
+        logger.info(f"Generated {len(top_prompts)} prompts (Top 100 by score)")
         return top_prompts
     
     async def _mine_reddit_prompts(self, industry: str, company_intel: Dict) -> List[Dict]:
