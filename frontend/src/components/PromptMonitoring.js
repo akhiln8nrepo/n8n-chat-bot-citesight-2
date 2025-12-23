@@ -320,8 +320,7 @@ const PromptMonitoring = () => {
             <div className="hidden md:flex items-center gap-6">
               <button onClick={() => navigate('/dashboard')} className="text-slate-600 hover:text-slate-900">Dashboard</button>
               <button onClick={() => navigate('/prompts')} className="text-blue-600 font-medium">Prompts</button>
-              <button className="text-slate-400 cursor-not-allowed">Monitoring</button>
-              <button className="text-slate-400 cursor-not-allowed">Analytics</button>
+              <button onClick={() => navigate('/analytics')} className="text-slate-600 hover:text-slate-900">Analytics</button>
             </div>
 
             <div className="flex items-center gap-4">
