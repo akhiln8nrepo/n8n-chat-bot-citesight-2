@@ -932,17 +932,17 @@ class AIplatformDiscovery:
             'has_web_search': False
         },
         'claude': {
-            'model': 'openrouter/anthropic/claude-3-haiku-20240307',
+            'model': 'openrouter/anthropic/claude-3.5-haiku-20241022',
             'display_name': 'Claude (Anthropic)',
             'has_web_search': False
         },
         'gemini': {
-            'model': 'openrouter/google/gemini-flash-1.5',
+            'model': 'openrouter/google/gemini-2.5-flash',
             'display_name': 'Gemini (Google)',
             'has_web_search': False
         },
         'perplexity': {
-            'model': 'openrouter/perplexity/llama-3.1-sonar-small-128k-online',
+            'model': 'openrouter/perplexity/sonar',
             'display_name': 'Perplexity AI',
             'has_web_search': True  # Perplexity has built-in web search
         }
