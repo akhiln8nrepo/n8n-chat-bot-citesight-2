@@ -434,6 +434,90 @@ async def get_onboarding_status(authorization: str = Header(None)):
         "prompt_count": await db.prompts.count_documents({"user_id": user['id']})
     }
 
+@api_router.get("/prompts/platform-analytics")
+async def get_platform_analytics(authorization: str = Header(None)):
+    """
+    Get AI platform analytics for the current user.
+    Returns visibility scores, competitor mentions, and prompt distribution per AI platform.
+    """
+    user = await get_current_user(authorization)
+    
+    # Get latest platform analytics
+    analytics_doc = await db.platform_analytics.find_one(
+        {"user_id": user['id']},
+        {"_id": 0},
+        sort=[("created_at", -1)]
+    )
+    
+    if not analytics_doc:
+        return {
+            "has_analytics": False,
+            "message": "No platform analytics available. Analytics are generated during user onboarding."
+        }
+    
+    # Get prompts discovered from AI platforms
+    ai_platform_prompts = await db.prompts.find(
+        {
+            "user_id": user['id'],
+            "source": "ai_platform_discovery"
+        },
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Build per-platform prompt breakdown
+    platform_prompts = {}
+    for prompt in ai_platform_prompts:
+        platform = prompt.get('extra_fields', {}).get('ai_discovery_platform', 'unknown')
+        if platform not in platform_prompts:
+            platform_prompts[platform] = []
+        platform_prompts[platform].append({
+            'prompt': prompt.get('prompt'),
+            'rank': prompt.get('rank'),
+            'overall_score': prompt.get('overall_score'),
+            'intent': prompt.get('intent'),
+            'tier': prompt.get('tier')
+        })
+    
+    return {
+        "has_analytics": True,
+        "platform_analytics": analytics_doc.get('platform_analytics', {}),
+        "generation_metadata": analytics_doc.get('generation_metadata', {}),
+        "platform_prompts": platform_prompts,
+        "total_ai_platform_prompts": len(ai_platform_prompts),
+        "created_at": analytics_doc.get('created_at')
+    }
+
+@api_router.get("/prompts/by-platform/{platform}")
+async def get_prompts_by_platform(platform: str, authorization: str = Header(None)):
+    """
+    Get prompts discovered from a specific AI platform.
+    Valid platforms: chatgpt, claude, gemini, perplexity
+    """
+    user = await get_current_user(authorization)
+    
+    valid_platforms = ['chatgpt', 'claude', 'gemini', 'perplexity']
+    if platform.lower() not in valid_platforms:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid platform. Valid options: {', '.join(valid_platforms)}"
+        )
+    
+    # Find prompts from this platform
+    prompts = await db.prompts.find(
+        {
+            "user_id": user['id'],
+            "source": "ai_platform_discovery",
+            "extra_fields.ai_discovery_platform": platform.lower()
+        },
+        {"_id": 0}
+    ).sort("rank", 1).to_list(100)
+    
+    return {
+        "platform": platform,
+        "prompts": prompts,
+        "count": len(prompts)
+    }
+
 # ============================================
 # USER ROUTES
 # ============================================
