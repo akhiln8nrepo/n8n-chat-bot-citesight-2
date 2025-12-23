@@ -4,7 +4,7 @@ import json
 import time
 from datetime import datetime
 
-class GEOPromptFrameworkTester:
+class Layer8AIDiscoveryTester:
     def __init__(self, base_url="https://geo-prompt-monitor.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
@@ -12,7 +12,9 @@ class GEOPromptFrameworkTester:
         self.tests_passed = 0
         self.access_token = None
         self.user_id = None
-        self.test_email = f"testadidas@geomonitor.com"
+        # Use timestamp for unique test user
+        timestamp = int(time.time())
+        self.test_email = f"layer8test_{timestamp}@geomonitor.com"
         
     def run_test(self, name, method, endpoint, expected_status, data=None, params=None, headers=None):
         """Run a single API test"""
