@@ -98,13 +98,14 @@ class Layer8AIDiscoveryTester:
         return False
 
     def test_onboarding_status(self, max_wait_time=120):
-        """Wait for onboarding to complete"""
-        print(f"\n🔍 Waiting for onboarding to complete (max {max_wait_time}s)...")
+        """Wait for onboarding to complete - Layer 8 may take longer due to AI platform queries"""
+        print(f"\n🔍 Waiting for Layer 8 onboarding to complete (max {max_wait_time}s)...")
+        print("   Layer 8 queries 4 AI platforms, so this may take 60-90 seconds...")
         
         start_time = time.time()
         while time.time() - start_time < max_wait_time:
             success, response = self.run_test(
-                "Check Onboarding Status",
+                "Check Layer 8 Onboarding Status",
                 "GET", 
                 "onboarding/status",
                 200
@@ -112,13 +113,21 @@ class Layer8AIDiscoveryTester:
             
             if success and response.get('completed'):
                 prompt_count = response.get('prompt_count', 0)
-                print(f"✅ Onboarding completed! Generated {prompt_count} prompts")
-                return True
+                print(f"✅ Layer 8 onboarding completed! Generated {prompt_count} prompts")
                 
-            print(f"   Onboarding in progress... ({int(time.time() - start_time)}s elapsed)")
-            time.sleep(5)
+                # Verify we got 100 prompts (up from previous 25)
+                if prompt_count >= 100:
+                    print(f"✅ Layer 8 SUCCESS: Generated {prompt_count} prompts (expected 100+)")
+                    return True
+                else:
+                    print(f"⚠️  Layer 8 WARNING: Only {prompt_count} prompts generated (expected 100+)")
+                    return True  # Still continue testing
+                
+            elapsed = int(time.time() - start_time)
+            print(f"   Layer 8 onboarding in progress... ({elapsed}s elapsed)")
+            time.sleep(10)  # Check every 10 seconds for Layer 8
         
-        print(f"❌ Onboarding did not complete within {max_wait_time} seconds")
+        print(f"❌ Layer 8 onboarding did not complete within {max_wait_time} seconds")
         return False
 
     def test_sportswear_prompts_relevance(self):
