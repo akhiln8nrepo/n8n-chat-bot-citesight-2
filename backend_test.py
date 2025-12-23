@@ -67,22 +67,22 @@ class Layer8AIDiscoveryTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
-    def test_register_adidas_user(self):
-        """Test user registration with Adidas sportswear company data"""
+    def test_register_layer8_user(self):
+        """Test user registration with Layer 8 test data as specified in review request"""
         user_data = {
             "email": self.test_email,
-            "password": "Test123!",
-            "first_name": "Test",
-            "last_name": "Adidas", 
-            "company_name": "Adidas",
-            "website_url": "https://www.adidas.com",
-            "industry": "Sportswear & Athletic Apparel",
-            "product_description": "Premium athletic footwear and sportswear brand specializing in running shoes, football boots, and lifestyle sneakers",
-            "competitors": ["Nike", "Puma", "Under Armour"]
+            "password": "TestLayer8!2024",
+            "first_name": "Layer8",
+            "last_name": "Test", 
+            "company_name": "Tech Solutions Inc",
+            "website_url": "https://stripe.com",
+            "industry": "Financial Services",
+            "product_description": "Payment processing and financial infrastructure for businesses",
+            "competitors": ["PayPal", "Square", "Adyen"]
         }
         
         success, response = self.run_test(
-            "Register Adidas User for GEO Framework Testing",
+            "Register Layer 8 Test User (Financial Services)",
             "POST",
             "auth/register",
             200,
