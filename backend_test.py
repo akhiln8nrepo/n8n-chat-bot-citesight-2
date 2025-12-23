@@ -257,47 +257,50 @@ class Layer8AIDiscoveryTester:
         print(f"✅ Good relevance: {relevance_percentage:.1f}% of prompts are fintech-related")
         return True
     def test_new_prompt_sources_with_layer8(self):
-        """Verify prompts come from the 8 sources + Layer 8 AI Platform Discovery"""
-        success, response = self.run_test(
-            "Verify New Prompt Sources (Including Layer 8)",
+        """Verify prompts come from multiple sources including Layer 8 AI Platform Discovery"""
+        # Get the source breakdown from stats endpoint for accurate count
+        success_stats, stats_response = self.run_test(
+            "Get Source Breakdown from Stats",
             "GET",
-            "prompts",
+            "prompts/stats",
             200
         )
         
-        if not success or not response:
+        if not success_stats or not stats_response:
             return False
         
-        expected_sources = [
-            'category_search', 'product_discovery', 'competitor_comparison',
-            'use_case', 'persona_based', 'problem_solution', 
-            'feature_discovery', 'reddit_mining', 'ai_platform_discovery'  # Layer 8
-        ]
+        source_breakdown = stats_response.get('source_breakdown', {})
         
-        found_sources = {}
-        for prompt in response:
-            source = prompt.get('source')
-            if source:
-                found_sources[source] = found_sources.get(source, 0) + 1
+        if not source_breakdown:
+            print("❌ No source breakdown found in stats")
+            return False
         
-        print(f"   Found sources: {dict(sorted(found_sources.items()))}")
+        print(f"   Complete source breakdown: {dict(sorted(source_breakdown.items()))}")
         
         # Check if Layer 8 source is present
-        if 'ai_platform_discovery' not in found_sources:
+        if 'ai_platform_discovery' not in source_breakdown:
             print(f"❌ Layer 8 source 'ai_platform_discovery' not found")
             return False
         
-        layer8_count = found_sources['ai_platform_discovery']
+        layer8_count = source_breakdown['ai_platform_discovery']
         print(f"✅ Layer 8 AI Platform Discovery: {layer8_count} prompts")
         
-        # Check for at least some traditional sources
-        traditional_sources = [s for s in found_sources.keys() if s != 'ai_platform_discovery']
+        # Check for traditional sources (should have at least 3 different sources)
+        traditional_sources = [s for s in source_breakdown.keys() if s != 'ai_platform_discovery']
         if len(traditional_sources) < 3:
             print(f"❌ Too few traditional sources: {traditional_sources}")
             return False
         
-        print(f"✅ Found {len(found_sources)} total sources including Layer 8")
-        return True
+        total_sources = len(source_breakdown)
+        print(f"✅ Found {total_sources} total sources including Layer 8")
+        
+        # Verify we have a good mix of sources
+        if total_sources >= 4 and layer8_count > 0:
+            print(f"✅ Good source diversity with Layer 8 integration")
+            return True
+        else:
+            print(f"❌ Insufficient source diversity: {total_sources} sources, {layer8_count} Layer 8 prompts")
+            return False
 
     def test_new_intent_classification(self):
         """Verify prompts use new intent types"""
