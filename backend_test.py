@@ -184,7 +184,51 @@ class Layer8AIDiscoveryTester:
         print(f"✅ Layer 8 AI Platform Discovery working - {len(platforms_found)} platforms active")
         return True
 
-    def test_new_prompt_sources(self):
+    def test_financial_services_prompts_relevance(self):
+        """Verify prompts are relevant to financial services/payments industry"""
+        success, response = self.run_test(
+            "Get Financial Services-Relevant Prompts",
+            "GET",
+            "prompts", 
+            200
+        )
+        
+        if not success or not response:
+            return False
+            
+        if not isinstance(response, list) or len(response) == 0:
+            print("❌ No prompts found")
+            return False
+        
+        print(f"✅ Generated {len(response)} prompts")
+        
+        # Check for financial services-relevant prompts
+        fintech_keywords = [
+            'payment', 'stripe', 'paypal', 'square', 'adyen', 'financial', 'fintech',
+            'transaction', 'billing', 'checkout', 'merchant', 'processing', 'banking',
+            'credit card', 'digital wallet', 'api', 'integration', 'subscription'
+        ]
+        
+        relevant_prompts = []
+        for prompt in response:
+            prompt_text = prompt.get('prompt', '').lower()
+            if any(keyword in prompt_text for keyword in fintech_keywords):
+                relevant_prompts.append(prompt)
+        
+        relevance_percentage = (len(relevant_prompts) / len(response)) * 100
+        print(f"   Financial Services relevance: {relevance_percentage:.1f}% ({len(relevant_prompts)}/{len(response)} prompts)")
+        
+        # Show sample relevant prompts
+        print("   Sample relevant prompts:")
+        for i, prompt in enumerate(relevant_prompts[:5]):
+            print(f"     {i+1}. {prompt.get('prompt')}")
+        
+        if relevance_percentage < 30:
+            print(f"❌ Low relevance: Only {relevance_percentage:.1f}% of prompts are fintech-related")
+            return False
+        
+        print(f"✅ Good relevance: {relevance_percentage:.1f}% of prompts are fintech-related")
+        return True
         """Verify prompts come from the 8 new sources"""
         success, response = self.run_test(
             "Verify New Prompt Sources",
