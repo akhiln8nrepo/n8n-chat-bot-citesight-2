@@ -101,19 +101,100 @@ const PromptMonitoring = () => {
     navigate('/auth/login');
   };
 
-  const toggleMonitor = (promptId) => {
-    setMonitoredPrompts(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(promptId)) {
-        newSet.delete(promptId);
+  const [runningChecks, setRunningChecks] = useState(new Set());
+
+  const toggleMonitor = async (promptId) => {
+    const isCurrentlyMonitored = monitoredPrompts.has(promptId);
+    
+    try {
+      if (isCurrentlyMonitored) {
+        // Stop monitoring
+        await axios.delete(`/prompts/${promptId}/monitor`);
+        setMonitoredPrompts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(promptId);
+          return newSet;
+        });
         toast.success('Prompt removed from monitoring');
       } else {
-        newSet.add(promptId);
+        // Start monitoring
+        await axios.post(`/prompts/${promptId}/monitor`);
+        setMonitoredPrompts(prev => {
+          const newSet = new Set(prev);
+          newSet.add(promptId);
+          return newSet;
+        });
         toast.success('Prompt added to monitoring');
       }
-      return newSet;
-    });
+    } catch (error) {
+      console.error('Error toggling monitoring:', error);
+      toast.error('Failed to update monitoring status');
+    }
   };
+
+  const runMonitoringCheck = async (promptId) => {
+    setRunningChecks(prev => new Set(prev).add(promptId));
+    
+    try {
+      const response = await axios.post(`/monitoring/run-check/${promptId}`);
+      const result = response.data;
+      
+      if (result.success) {
+        const visibility = result.summary?.visibility_rate || 0;
+        toast.success(
+          `Check complete! Visibility: ${visibility}% across ${result.summary?.total_platforms_checked || 0} platforms`,
+          { duration: 5000 }
+        );
+      }
+    } catch (error) {
+      console.error('Error running check:', error);
+      toast.error('Failed to run monitoring check');
+    } finally {
+      setRunningChecks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(promptId);
+        return newSet;
+      });
+    }
+  };
+
+  const runAllMonitoringChecks = async () => {
+    if (monitoredPrompts.size === 0) {
+      toast.error('No prompts are being monitored. Add prompts to monitoring first.');
+      return;
+    }
+    
+    toast.info(`Running checks for ${monitoredPrompts.size} monitored prompts...`);
+    
+    try {
+      const response = await axios.post('/monitoring/run-all');
+      const result = response.data;
+      
+      toast.success(
+        `Completed ${result.successful}/${result.checks_run} checks successfully!`,
+        { duration: 5000 }
+      );
+    } catch (error) {
+      console.error('Error running all checks:', error);
+      toast.error('Failed to run monitoring checks');
+    }
+  };
+
+  const fetchMonitoredPrompts = async () => {
+    try {
+      const response = await axios.get('/monitoring/prompts');
+      const monitored = new Set(response.data.map(p => p.id));
+      setMonitoredPrompts(monitored);
+    } catch (error) {
+      console.error('Error fetching monitored prompts:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (onboardingComplete) {
+      fetchMonitoredPrompts();
+    }
+  }, [onboardingComplete]);
 
   const getFilteredPrompts = () => {
     let filtered = [...prompts];
