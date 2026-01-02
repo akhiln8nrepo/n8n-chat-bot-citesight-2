@@ -593,6 +593,39 @@ const PromptMonitoring = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
+                        {/* Monitor Toggle */}
+                        <button 
+                          onClick={() => toggleMonitor(prompt.id)}
+                          className={`p-1.5 rounded transition-colors ${
+                            monitoredPrompts.has(prompt.id)
+                              ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                              : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                          }`}
+                          title={monitoredPrompts.has(prompt.id) ? 'Stop Monitoring' : 'Start Monitoring'}
+                        >
+                          <Radio size={16} />
+                        </button>
+                        
+                        {/* Run Check Button (only if monitored) */}
+                        {monitoredPrompts.has(prompt.id) && (
+                          <button 
+                            onClick={() => runMonitoringCheck(prompt.id)}
+                            disabled={runningChecks.has(prompt.id)}
+                            className={`p-1.5 rounded transition-colors ${
+                              runningChecks.has(prompt.id)
+                                ? 'text-blue-400 bg-blue-50 cursor-wait'
+                                : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                            }`}
+                            title="Run Check Now"
+                          >
+                            {runningChecks.has(prompt.id) ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Zap size={16} />
+                            )}
+                          </button>
+                        )}
+                        
                         <button 
                           onClick={() => setSelectedPrompt(prompt)}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -601,22 +634,11 @@ const PromptMonitoring = () => {
                           <Eye size={16} />
                         </button>
                         <button 
-                          className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                          onClick={() => navigate('/analytics')}
+                          className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
                           title="View Analytics"
                         >
                           <BarChart3 size={16} />
-                        </button>
-                        <button 
-                          className="p-1.5 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button 
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
                         </button>
                         {monitoredPrompts.has(prompt.id) && (
                           <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">
