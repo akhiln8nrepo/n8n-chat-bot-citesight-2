@@ -26,7 +26,10 @@ import {
   Lightbulb,
   HelpCircle,
   Microscope,
-  CheckCircle2
+  CheckCircle2,
+  Play,
+  Radio,
+  Zap
 } from 'lucide-react';
 
 const PromptMonitoring = () => {
