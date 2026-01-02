@@ -609,6 +609,226 @@ async def get_monitored_prompts(authorization: str = Header(None)):
     
     return monitored_prompts
 
+@api_router.post("/monitoring/run-check/{prompt_id}")
+async def run_single_monitoring_check(prompt_id: str, authorization: str = Header(None)):
+    """
+    Run a monitoring check for a single prompt across all AI platforms.
+    This actually queries ChatGPT, Claude, Gemini, and Perplexity.
+    """
+    user = await get_current_user(authorization)
+    
+    # Get prompt
+    prompt = await db.prompts.find_one({"id": prompt_id, "user_id": user['id']}, {"_id": 0})
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    
+    # Get user info for brand name and competitors
+    user_data = await db.users.find_one({"id": user['id']}, {"_id": 0})
+    brand_name = user_data.get('company_name', 'Brand')
+    competitors = user_data.get('competitors', [])
+    
+    # Run the monitoring check
+    try:
+        check_result = await ai_monitoring_service.run_monitoring_check(
+            prompt_text=prompt.get('prompt', ''),
+            brand_name=brand_name,
+            competitors=competitors,
+            platforms=['chatgpt', 'claude', 'gemini', 'perplexity']
+        )
+        
+        # Save the check result
+        check_id = str(uuid.uuid4())
+        check_record = {
+            "id": check_id,
+            "user_id": user['id'],
+            "prompt_id": prompt_id,
+            "brand_name": brand_name,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "summary": check_result.get('summary', {}),
+            "status": "completed"
+        }
+        await db.monitoring_results.insert_one(check_record)
+        
+        # Save individual platform results as brand_mentions
+        for platform, result in check_result.get('platforms', {}).items():
+            if result.get('brand_mentioned'):
+                mention_record = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": user['id'],
+                    "prompt_id": prompt_id,
+                    "monitoring_result_id": check_id,
+                    "platform": platform,
+                    "detected_at": datetime.now(timezone.utc).isoformat(),
+                    "position_in_response": result.get('position'),
+                    "mention_type": result.get('mention_type', 'information'),
+                    "sentiment": result.get('sentiment', 'neutral'),
+                    "sentiment_score": result.get('sentiment_score', 0),
+                    "is_comparison": result.get('is_comparison', False),
+                    "brand_featured": result.get('brand_featured', False),
+                    "in_top_3": result.get('in_top_3', False),
+                    "response_snippet": result.get('response_content', '')[:500]
+                }
+                await db.brand_mentions.insert_one(mention_record)
+            
+            # Save competitor mentions
+            for competitor, comp_result in result.get('competitor_mentions', {}).items():
+                if comp_result.get('mentioned'):
+                    comp_mention = {
+                        "id": str(uuid.uuid4()),
+                        "user_id": user['id'],
+                        "prompt_id": prompt_id,
+                        "monitoring_result_id": check_id,
+                        "platform": platform,
+                        "competitor_name": competitor,
+                        "detected_at": datetime.now(timezone.utc).isoformat(),
+                        "position_in_response": comp_result.get('position'),
+                        "positioned_above_brand": comp_result.get('positioned_above_brand'),
+                        "is_direct_comparison": result.get('is_comparison', False)
+                    }
+                    await db.competitor_mentions.insert_one(comp_mention)
+        
+        # Update monitoring config
+        await db.monitoring_configs.update_one(
+            {"user_id": user['id'], "prompt_id": prompt_id},
+            {
+                "$set": {"last_checked_at": datetime.now(timezone.utc).isoformat()},
+                "$inc": {"total_checks": 1}
+            }
+        )
+        
+        return {
+            "success": True,
+            "check_id": check_id,
+            "summary": check_result.get('summary', {}),
+            "platforms": {
+                platform: {
+                    "brand_mentioned": r.get('brand_mentioned', False),
+                    "position": r.get('position'),
+                    "sentiment": r.get('sentiment'),
+                    "competitors_found": list(r.get('competitor_mentions', {}).keys())
+                }
+                for platform, r in check_result.get('platforms', {}).items()
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Monitoring check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Monitoring check failed: {str(e)}")
+
+@api_router.post("/monitoring/run-all")
+async def run_all_monitoring_checks(authorization: str = Header(None)):
+    """
+    Run monitoring checks for all actively monitored prompts.
+    """
+    user = await get_current_user(authorization)
+    
+    # Get all active monitoring configs
+    configs = await db.monitoring_configs.find(
+        {"user_id": user['id'], "is_active": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    if not configs:
+        return {"message": "No prompts are being monitored", "checks_run": 0}
+    
+    # Get user info
+    user_data = await db.users.find_one({"id": user['id']}, {"_id": 0})
+    brand_name = user_data.get('company_name', 'Brand')
+    competitors = user_data.get('competitors', [])
+    
+    results = []
+    for config in configs[:10]:  # Limit to 10 to avoid timeout
+        prompt_id = config['prompt_id']
+        prompt = await db.prompts.find_one({"id": prompt_id}, {"_id": 0})
+        if not prompt:
+            continue
+        
+        try:
+            check_result = await ai_monitoring_service.run_monitoring_check(
+                prompt_text=prompt.get('prompt', ''),
+                brand_name=brand_name,
+                competitors=competitors,
+                platforms=['chatgpt', 'claude', 'gemini', 'perplexity']
+            )
+            
+            # Save results (same as single check)
+            check_id = str(uuid.uuid4())
+            check_record = {
+                "id": check_id,
+                "user_id": user['id'],
+                "prompt_id": prompt_id,
+                "brand_name": brand_name,
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "summary": check_result.get('summary', {}),
+                "status": "completed"
+            }
+            await db.monitoring_results.insert_one(check_record)
+            
+            # Save mentions
+            for platform, result in check_result.get('platforms', {}).items():
+                if result.get('brand_mentioned'):
+                    mention_record = {
+                        "id": str(uuid.uuid4()),
+                        "user_id": user['id'],
+                        "prompt_id": prompt_id,
+                        "monitoring_result_id": check_id,
+                        "platform": platform,
+                        "detected_at": datetime.now(timezone.utc).isoformat(),
+                        "position_in_response": result.get('position'),
+                        "mention_type": result.get('mention_type', 'information'),
+                        "sentiment": result.get('sentiment', 'neutral'),
+                        "sentiment_score": result.get('sentiment_score', 0),
+                        "is_comparison": result.get('is_comparison', False),
+                        "brand_featured": result.get('brand_featured', False),
+                        "in_top_3": result.get('in_top_3', False)
+                    }
+                    await db.brand_mentions.insert_one(mention_record)
+                
+                for competitor, comp_result in result.get('competitor_mentions', {}).items():
+                    if comp_result.get('mentioned'):
+                        comp_mention = {
+                            "id": str(uuid.uuid4()),
+                            "user_id": user['id'],
+                            "prompt_id": prompt_id,
+                            "monitoring_result_id": check_id,
+                            "platform": platform,
+                            "competitor_name": competitor,
+                            "detected_at": datetime.now(timezone.utc).isoformat(),
+                            "position_in_response": comp_result.get('position'),
+                            "positioned_above_brand": comp_result.get('positioned_above_brand'),
+                            "is_direct_comparison": result.get('is_comparison', False)
+                        }
+                        await db.competitor_mentions.insert_one(comp_mention)
+            
+            # Update config
+            await db.monitoring_configs.update_one(
+                {"id": config['id']},
+                {
+                    "$set": {"last_checked_at": datetime.now(timezone.utc).isoformat()},
+                    "$inc": {"total_checks": 1}
+                }
+            )
+            
+            results.append({
+                "prompt_id": prompt_id,
+                "success": True,
+                "visibility_rate": check_result.get('summary', {}).get('visibility_rate', 0)
+            })
+            
+        except Exception as e:
+            logger.error(f"Check failed for prompt {prompt_id}: {e}")
+            results.append({
+                "prompt_id": prompt_id,
+                "success": False,
+                "error": str(e)
+            })
+    
+    return {
+        "checks_run": len(results),
+        "successful": len([r for r in results if r.get('success')]),
+        "results": results
+    }
+
 # ============================================
 # ANALYTICS ROUTES - COMPREHENSIVE DASHBOARD
 # ============================================
