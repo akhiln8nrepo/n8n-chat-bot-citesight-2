@@ -15,6 +15,7 @@ import jwt
 # Import new services
 from crawler_service import crawler_service
 from prompt_generator_service import prompt_generator_service
+from ai_monitoring_service import ai_monitoring_service
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
