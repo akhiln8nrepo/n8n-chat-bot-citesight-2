@@ -430,9 +430,30 @@ const PromptMonitoring = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">PROMPTS</h2>
-          <p className="text-slate-600">Manage and monitor your AI prompt opportunities</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">PROMPTS</h2>
+            <p className="text-slate-600">Manage and monitor your AI prompt opportunities</p>
+          </div>
+          
+          {/* Monitoring Actions */}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-slate-500">
+              <span className="font-medium text-green-600">{monitoredPrompts.size}</span> prompts monitored
+            </div>
+            <button
+              onClick={runAllMonitoringChecks}
+              disabled={monitoredPrompts.size === 0}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                monitoredPrompts.size > 0
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <Zap size={18} />
+              Run All Checks
+            </button>
+          </div>
         </div>
 
         {/* Filters Card */}
@@ -445,6 +466,17 @@ const PromptMonitoring = () => {
               <RefreshCw size={18} />
               Regenerate Prompts
             </button>
+            
+            {/* Show Monitored Only Toggle */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.showMonitoredOnly}
+                onChange={(e) => setFilters({...filters, showMonitoredOnly: e.target.checked})}
+                className="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+              />
+              <span className="text-sm text-slate-600">Show monitored only</span>
+            </label>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
