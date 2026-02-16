@@ -9,8 +9,9 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection for auth
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+auth_db_name = os.environ.get('AUTH_DB_NAME', 'citesight_auth')
 client = AsyncIOMotorClient(mongo_url)
-auth_db = client['citesight_auth']
+auth_db = client[auth_db_name]
 
 # Collections
 users_collection = auth_db['users']
