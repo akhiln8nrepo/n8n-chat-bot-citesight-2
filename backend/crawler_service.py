@@ -19,7 +19,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 logger = logging.getLogger(__name__)
 
-FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY', 'fc-c9c7061cc1e44a398cc55f24a37682cd')
+FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
 FIRECRAWL_BASE_URL = 'https://api.firecrawl.dev/v0'
 
 
