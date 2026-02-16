@@ -20,8 +20,9 @@ logger = logging.getLogger(__name__)
 
 # MongoDB connection
 mongo_url = os.environ.get('MONGO_URL')
+db_name = os.environ.get('DB_NAME', 'citesight')
 client = AsyncIOMotorClient(mongo_url)
-db = client['citesight']
+db = client[db_name]
 
 # Email configuration (using SMTP for now)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
