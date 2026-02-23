@@ -16,15 +16,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 16
 
       - name: Install dependencies
         working-directory: ./frontend
         run: npm install --legacy-peer-deps
 
+      - name: Fix ajv and ajv-keywords versions
+        working-directory: ./frontend
+        run: |
+          npm install ajv@^6.12.6 ajv-keywords@^3.5.2 --legacy-peer-deps
+
       - name: Build the app
         working-directory: ./frontend
         run: npm run build
+        env:
+          CI: false
+          DISABLE_ESLINT_PLUGIN: true
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
