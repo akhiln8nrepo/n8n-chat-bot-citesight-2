@@ -25,7 +25,7 @@ class AIMonitoringService:
             'display_name': 'ChatGPT (OpenAI)'
         },
         'claude': {
-            'model': 'openrouter/anthropic/claude-3.5-haiku-20241022',
+            'model': 'openrouter/anthropic/claude-3.5-haiku',
             'display_name': 'Claude (Anthropic)'
         },
         'gemini': {
