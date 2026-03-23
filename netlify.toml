@@ -1,6 +1,6 @@
 [build]
   base = "frontend"
-  command = "npm install --legacy-peer-deps --force && node fix-ajv.js && npm run build"
+  command = "npm install --legacy-peer-deps --force && rm -rf node_modules/schema-utils/node_modules && npm run build"
   publish = "build"
 
 [build.environment]
