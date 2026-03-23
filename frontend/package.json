@@ -57,6 +57,7 @@
     "zod": "^3.24.4"
   },
   "scripts": {
+    "postinstall": "rm -rf node_modules/schema-utils/node_modules",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
@@ -77,11 +78,13 @@
   },
   "overrides": {
     "ajv": "^6.12.6",
+    "schema-utils": "3.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "resolutions": {
     "ajv": "^6.12.6",
+    "schema-utils": "3.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
