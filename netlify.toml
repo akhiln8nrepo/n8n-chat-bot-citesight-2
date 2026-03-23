@@ -1,11 +1,11 @@
 [build]
   base = "frontend"
-  command = "npm install --legacy-peer-deps --force && npm run build"
+  command = "npm install --legacy-peer-deps --force && node fix-ajv.js && npm run build"
   publish = "build"
 
 [build.environment]
   NODE_VERSION = "20.11.0"
-  NPM_VERSION  = "10.2.3"
+  NPM_VERSION  = "10.2.4"
   CI           = "false"
 
 [[redirects]]
