@@ -4,8 +4,8 @@
   publish = "build"
 
 [build.environment]
-  NODE_VERSION = "18.19.0"
-  NPM_VERSION  = "9.9.0"
+  NODE_VERSION = "20.11.0"
+  NPM_VERSION  = "10.2.3"
   CI           = "false"
 
 [[redirects]]
